@@ -1,0 +1,72 @@
+{
+  "name": "@talonic/node",
+  "version": "0.1.0",
+  "description": "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document.",
+  "license": "MIT",
+  "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
+  "homepage": "https://talonic.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/talonicdev/talonic-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/talonicdev/talonic-node/issues"
+  },
+  "keywords": [
+    "talonic",
+    "ai",
+    "document-extraction",
+    "ocr",
+    "structured-data",
+    "pdf",
+    "schema",
+    "llm",
+    "data-extraction"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "talonic": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "vitest run tests/live.test.ts --config vitest.live.config.ts",
+    "debug": "tsx examples/debug.ts",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "clean": "rm -rf dist coverage",
+    "check:spec": "tsx scripts/check-spec.ts",
+    "prepublishOnly": "npm run typecheck && npm run check:spec && npm run build && npm test"
+  },
+  "devDependencies": {
+    "@talonic/docs": "^0.17.0",
+    "@types/node": "^22.10.0",
+    "prettier": "^3.4.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "vitest": "^3.2.4"
+  }
+}

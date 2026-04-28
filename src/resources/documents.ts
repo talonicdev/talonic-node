@@ -1,0 +1,329 @@
+import { TalonicError } from "../errors.js"
+import type { Transport } from "../transport.js"
+import type { Pagination } from "./pagination.js"
+
+/**
+ * A document uploaded to Talonic.
+ *
+ * Mirrors the production API response shape. Many fields are optional
+ * because the API includes more detail on single-document fetches than
+ * on list pages, and because document metadata grows over time as the
+ * processing pipeline completes.
+ *
+ * @public
+ */
+export interface Document {
+  id: string
+  filename: string
+  status: string
+  pages?: number
+  size_bytes?: number
+  mime_type?: string
+  /** Detected document type (e.g. "Certificate of Insurance"). */
+  type_detected?: string
+  /** Detected language code (e.g. "en"). */
+  language_detected?: string
+  source?: {
+    id: string
+    type?: string
+  }
+  triage?: Record<string, unknown>
+  original_path?: string | null
+  extraction_count?: number
+  latest_extraction_id?: string
+  processing_log?: Array<{
+    step: string
+    status: string
+    detail?: string
+    started_at?: string
+    completed_at?: string
+    duration_ms?: number
+  }>
+  created_at: string
+  updated_at?: string
+  links?: Record<string, string>
+}
+
+/**
+ * Paginated list of documents.
+ *
+ * @public
+ */
+export interface DocumentList {
+  data: Document[]
+  pagination: Pagination
+}
+
+/**
+ * Filter and pagination options for listing documents.
+ *
+ * @public
+ */
+export interface ListDocumentsParams {
+  source_id?: string
+  status?: "pending" | "processing" | "completed" | "error"
+  /** ISO 8601. Only documents created after this timestamp. */
+  after?: string
+  /** ISO 8601. Only documents created before this timestamp. */
+  before?: string
+  /** Full-text search across filename and extracted content. */
+  search?: string
+  page?: number
+  per_page?: number
+}
+
+/**
+ * OCR-converted markdown of a document.
+ *
+ * @public
+ */
+export interface DocumentMarkdown {
+  document_id: string
+  markdown: string
+}
+
+/**
+ * Result of triggering a re-extraction.
+ *
+ * @public
+ */
+export interface ReExtractResult {
+  id: string
+  status: string
+  message: string
+}
+
+/**
+ * A document as returned by the filter endpoint. The shape differs from
+ * the list/get response: id is present, plus optional name/filename,
+ * sourceId, uploadedAt, and the matched fieldValues.
+ *
+ * @public
+ */
+export interface FilterDocumentHit {
+  id: string
+  name?: string
+  filename?: string
+  sourceId?: string
+  uploadedAt?: string
+  fieldValues?: Record<string, unknown>
+}
+
+/**
+ * Result of `talonic.documents.filter()`.
+ *
+ * @public
+ */
+export interface FilterDocumentsResult {
+  documents: FilterDocumentHit[]
+  total: number
+  page?: number
+  limit?: number
+}
+
+/**
+ * Operators supported by the `/filter/documents` endpoint.
+ *
+ * @public
+ */
+export type FilterOperator =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "between"
+  | "contains"
+  | "is_empty"
+  | "is_not_empty"
+
+/**
+ * A single filter condition. Provide either `field` (a name, which the
+ * SDK resolves to a field ID via `/fields/autocomplete`) or `fieldId`
+ * (a Talonic field ID, used as-is).
+ *
+ * @public
+ */
+export interface FilterCondition {
+  /** Human-readable field name. SDK resolves to fieldId automatically. */
+  field?: string
+  /** Talonic field ID. Use this if you already have it. */
+  fieldId?: string
+  operator: FilterOperator
+  value?: unknown
+  /** Used by the `between` operator. */
+  valueTo?: unknown
+}
+
+/**
+ * Sort spec. Same field/fieldId rules as conditions.
+ *
+ * @public
+ */
+export interface FilterSort {
+  field?: string
+  fieldId?: string
+  direction: "asc" | "desc"
+}
+
+/**
+ * Body for `talonic.documents.filter()`.
+ *
+ * @public
+ */
+export interface FilterDocumentsParams {
+  conditions: FilterCondition[]
+  /** Free-text search across document content. */
+  search?: string
+  sort?: FilterSort
+  page?: number
+  limit?: number
+  /** Scope to a specific source connection. */
+  source_connection_id?: string
+}
+
+/**
+ * Documents resource. Accessed via `talonic.documents`.
+ *
+ * @public
+ */
+export class Documents {
+  /** @internal */
+  readonly #transport: Transport
+
+  /** @internal */
+  constructor(transport: Transport) {
+    this.#transport = transport
+  }
+
+  /** List all documents with filtering and pagination. */
+  async list(params?: ListDocumentsParams): Promise<DocumentList> {
+    const result = await this.#transport.request<DocumentList>({
+      method: "GET",
+      path: "/v1/documents",
+      query: params as Record<string, string | number | boolean | undefined> | undefined,
+    })
+    return result.data
+  }
+
+  /** Retrieve a single document with full metadata. */
+  async get(id: string): Promise<Document> {
+    const result = await this.#transport.request<Document>({
+      method: "GET",
+      path: `/v1/documents/${encodeURIComponent(id)}`,
+    })
+    return result.data
+  }
+
+  /** Get the OCR-converted markdown of a document. */
+  async getMarkdown(id: string): Promise<DocumentMarkdown> {
+    const result = await this.#transport.request<DocumentMarkdown>({
+      method: "GET",
+      path: `/v1/documents/${encodeURIComponent(id)}/markdown`,
+    })
+    return result.data
+  }
+
+  /** Re-run extraction on an existing document. */
+  async reExtract(id: string): Promise<ReExtractResult> {
+    const result = await this.#transport.request<ReExtractResult>({
+      method: "POST",
+      path: `/v1/documents/${encodeURIComponent(id)}/re-extract`,
+    })
+    return result.data
+  }
+
+  /**
+   * Delete a document and all associated extractions. This action is
+   * irreversible.
+   */
+  async delete(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.#transport.request<{ deleted: boolean }>({
+      method: "DELETE",
+      path: `/v1/documents/${encodeURIComponent(id)}`,
+    })
+    return result.data
+  }
+
+  /**
+   * Filter documents by extracted field values using composable conditions.
+   *
+   * The API's `fieldId` slot accepts either a Talonic field UUID OR a
+   * user-schema field name (e.g. `"amount"`, `"vendor_name"`). The SDK
+   * passes whichever you provide straight through; no separate lookup
+   * is required.
+   *
+   * @example
+   * ```ts
+   * const result = await talonic.documents.filter({
+   *   conditions: [{ field: "vendor_name", operator: "eq", value: "Acme" }],
+   *   sort: { field: "invoice_date", direction: "desc" },
+   *   limit: 25,
+   * })
+   * ```
+   */
+  async filter(params: FilterDocumentsParams): Promise<FilterDocumentsResult> {
+    const conditions = params.conditions.map((c) => this.#shapeCondition(c))
+
+    let sort: { fieldId: string; direction: "asc" | "desc" } | undefined
+    if (params.sort !== undefined) {
+      const ref = params.sort.fieldId ?? params.sort.field
+      if (!ref) {
+        throw new TalonicError({
+          code: "missing_field_reference",
+          message: "filter sort needs either `field` (name) or `fieldId`.",
+          status: 0,
+          retryable: false,
+        })
+      }
+      sort = { fieldId: ref, direction: params.sort.direction }
+    }
+
+    const body: Record<string, unknown> = { conditions }
+    if (params.search !== undefined) body["search"] = params.search
+    if (sort !== undefined) body["sort"] = sort
+    if (params.page !== undefined) body["page"] = params.page
+    if (params.limit !== undefined) body["limit"] = params.limit
+    if (params.source_connection_id !== undefined) {
+      body["source_id"] = params.source_connection_id
+    }
+
+    const result = await this.#transport.request<FilterDocumentsResult>({
+      method: "POST",
+      path: "/v1/documents/filter",
+      body,
+    })
+    return result.data
+  }
+
+  /**
+   * Shape one filter condition for the wire. The API's `fieldId`
+   * accepts either a UUID or a user-schema field name; whichever the
+   * caller gave us is passed through.
+   *
+   * @internal
+   */
+  #shapeCondition(cond: FilterCondition): {
+    fieldId: string
+    operator: FilterOperator
+    value?: unknown
+    valueTo?: unknown
+  } {
+    const ref = cond.fieldId ?? cond.field
+    if (!ref) {
+      throw new TalonicError({
+        code: "missing_field_reference",
+        message: "Each filter condition needs either `field` (name) or `fieldId`.",
+        status: 0,
+        retryable: false,
+      })
+    }
+    return {
+      fieldId: ref,
+      operator: cond.operator,
+      ...(cond.value !== undefined ? { value: cond.value } : {}),
+      ...(cond.valueTo !== undefined ? { valueTo: cond.valueTo } : {}),
+    }
+  }
+}
