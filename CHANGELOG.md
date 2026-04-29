@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-29
+
+### Fixed
+
+- CLI bin (`talonic`) no longer exits silently when invoked through the npm-managed `node_modules/.bin/` symlink (the way every end user invokes it, including via `npx`). The auto-run guard previously compared `import.meta.url` to `file://${process.argv[1]}` as strings; on macOS those two strings disagree when the binary is reached via a symlink, so `run()` never executed and the process exited with code 0 and no output. The guard now resolves both sides with `fs.realpathSync` before comparing, so symlink and direct invocations both work.
+
+### Added
+
+- Regression test (`tests/cli-symlink.test.ts`) that spawns the bundled CLI through a symlink and asserts `--version` prints `VERSION`. Catches future regressions of the auto-run guard before publish.
+
+## [Unreleased prior to 0.1.2]
+
 ### Added
 
 - Project skeleton: TypeScript strict mode, `tsup` dual ESM and CJS build, Vitest test runner, GitHub Actions CI matrix on Node 18, 20, 22.
