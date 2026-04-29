@@ -57,11 +57,21 @@ export interface CreateJobParams {
 /**
  * Filter and pagination options for listing jobs.
  *
+ * Uses cursor-based pagination per the OpenAPI spec.
+ *
  * @public
  */
 export interface ListJobsParams {
   status?: "queued" | "processing" | "completed" | "failed" | "cancelled"
+  /** Cursor token from a previous response's `pagination.next_cursor`. */
+  cursor?: string
+  /** Page size. */
+  limit?: number
+  /** Sort order. */
+  order?: string
+  /** @deprecated Use `cursor` + `limit` instead. */
   page?: number
+  /** @deprecated Use `limit` instead. */
   per_page?: number
 }
 

@@ -1,6 +1,16 @@
 import { TalonicError } from "../errors.js"
 import type { Transport } from "../transport.js"
+import type { Fields } from "./fields.js"
 import type { Pagination } from "./pagination.js"
+
+/**
+ * Quick UUID detector for "looks like a Talonic field UUID" so we can
+ * skip the `/v1/fields?search=` resolution roundtrip when the user
+ * already has an id.
+ *
+ * @internal
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * A document uploaded to Talonic.
@@ -57,6 +67,11 @@ export interface DocumentList {
 /**
  * Filter and pagination options for listing documents.
  *
+ * The API uses cursor-based pagination: pass `limit` to set page size,
+ * and pass the `next_cursor` from a previous response as `cursor` to
+ * fetch the next page. Legacy `page` / `per_page` are accepted as
+ * aliases for compatibility but cursor-based is the canonical form.
+ *
  * @public
  */
 export interface ListDocumentsParams {
@@ -68,7 +83,15 @@ export interface ListDocumentsParams {
   before?: string
   /** Full-text search across filename and extracted content. */
   search?: string
+  /** Cursor token from a previous response's `pagination.next_cursor`. */
+  cursor?: string
+  /** Page size. */
+  limit?: number
+  /** Sort order, e.g. `"created_at:desc"`. */
+  order?: string
+  /** @deprecated Use `cursor` + `limit` instead. */
   page?: number
+  /** @deprecated Use `limit` instead. */
   per_page?: number
 }
 
@@ -191,10 +214,13 @@ export interface FilterDocumentsParams {
 export class Documents {
   /** @internal */
   readonly #transport: Transport
+  /** @internal */
+  readonly #fields: Fields
 
   /** @internal */
-  constructor(transport: Transport) {
+  constructor(transport: Transport, fields: Fields) {
     this.#transport = transport
+    this.#fields = fields
   }
 
   /** List all documents with filtering and pagination. */
@@ -249,10 +275,14 @@ export class Documents {
   /**
    * Filter documents by extracted field values using composable conditions.
    *
-   * The API's `fieldId` slot accepts either a Talonic field UUID OR a
-   * user-schema field name (e.g. `"amount"`, `"vendor_name"`). The SDK
-   * passes whichever you provide straight through; no separate lookup
-   * is required.
+   * Conditions accept either `field` (a human-readable name like
+   * `"vendor_name"`, which the SDK resolves to a Talonic field UUID via
+   * `/v1/fields?search=`) or `fieldId` (a UUID, used as-is). The same
+   * applies to `sort.field` / `sort.fieldId`.
+   *
+   * Production rejects requests that pass field names directly in the
+   * `fieldId` slot, so this resolution step is required for ergonomic
+   * usage from agents.
    *
    * @example
    * ```ts
@@ -264,20 +294,23 @@ export class Documents {
    * ```
    */
   async filter(params: FilterDocumentsParams): Promise<FilterDocumentsResult> {
-    const conditions = params.conditions.map((c) => this.#shapeCondition(c))
+    // Promise cache: when two conditions reference the same field name
+    // we want exactly one /v1/fields lookup, even though shapeCondition
+    // calls run in parallel. Storing the in-flight promise dedupes them.
+    const cache = new Map<string, Promise<string>>()
+
+    const conditions = await Promise.all(
+      params.conditions.map((c) => this.#shapeCondition(c, cache)),
+    )
 
     let sort: { fieldId: string; direction: "asc" | "desc" } | undefined
     if (params.sort !== undefined) {
-      const ref = params.sort.fieldId ?? params.sort.field
-      if (!ref) {
-        throw new TalonicError({
-          code: "missing_field_reference",
-          message: "filter sort needs either `field` (name) or `fieldId`.",
-          status: 0,
-          retryable: false,
-        })
-      }
-      sort = { fieldId: ref, direction: params.sort.direction }
+      const fieldId = await this.#resolveFieldRef(
+        { field: params.sort.field, fieldId: params.sort.fieldId },
+        "filter sort",
+        cache,
+      )
+      sort = { fieldId, direction: params.sort.direction }
     }
 
     const body: Record<string, unknown> = { conditions }
@@ -298,32 +331,80 @@ export class Documents {
   }
 
   /**
-   * Shape one filter condition for the wire. The API's `fieldId`
-   * accepts either a UUID or a user-schema field name; whichever the
-   * caller gave us is passed through.
+   * Shape one filter condition for the wire, resolving a field name to
+   * a UUID via `/v1/fields?search=` when needed. Per-call cache avoids
+   * duplicate lookups for the same name.
    *
    * @internal
    */
-  #shapeCondition(cond: FilterCondition): {
+  async #shapeCondition(
+    cond: FilterCondition,
+    cache: Map<string, Promise<string>>,
+  ): Promise<{
     fieldId: string
     operator: FilterOperator
     value?: unknown
     valueTo?: unknown
-  } {
-    const ref = cond.fieldId ?? cond.field
-    if (!ref) {
-      throw new TalonicError({
-        code: "missing_field_reference",
-        message: "Each filter condition needs either `field` (name) or `fieldId`.",
-        status: 0,
-        retryable: false,
-      })
-    }
+  }> {
+    const fieldId = await this.#resolveFieldRef(cond, "filter condition", cache)
     return {
-      fieldId: ref,
+      fieldId,
       operator: cond.operator,
       ...(cond.value !== undefined ? { value: cond.value } : {}),
       ...(cond.valueTo !== undefined ? { valueTo: cond.valueTo } : {}),
     }
+  }
+
+  /**
+   * Resolve `{ field?, fieldId? }` into a UUID string suitable for the
+   * `fieldId` slot in the wire body.
+   *
+   * Resolution rules, in order:
+   *   1. `fieldId` set: pass through.
+   *   2. `field` looks like a UUID: pass through (caller used the wrong
+   *      field name but is technically passing an id).
+   *   3. `field` is a name: search `/v1/fields?search=<name>`, pick the
+   *      result whose `canonical_name` matches exactly, else the top
+   *      result. Throw `field_not_found` if nothing matches.
+   *
+   * @internal
+   */
+  async #resolveFieldRef(
+    ref: { field?: string; fieldId?: string },
+    context: string,
+    cache: Map<string, Promise<string>>,
+  ): Promise<string> {
+    if (ref.fieldId) return ref.fieldId
+    if (!ref.field) {
+      throw new TalonicError({
+        code: "missing_field_reference",
+        message: `Each ${context} needs either \`field\` (name) or \`fieldId\`.`,
+        status: 0,
+        retryable: false,
+      })
+    }
+    if (UUID_REGEX.test(ref.field)) return ref.field
+
+    const cached = cache.get(ref.field)
+    if (cached) return cached
+
+    const fieldName = ref.field
+    const lookup = (async (): Promise<string> => {
+      const result = await this.#fields.list({ search: fieldName, limit: 5 })
+      const exact = result.data.find((f) => f.canonical_name === fieldName)
+      const chosen = exact ?? result.data[0]
+      if (!chosen) {
+        throw new TalonicError({
+          code: "field_not_found",
+          message: `No field matches name: ${fieldName}`,
+          status: 0,
+          retryable: false,
+        })
+      }
+      return chosen.id
+    })()
+
+    cache.set(fieldName, lookup)
+    return lookup
   }
 }

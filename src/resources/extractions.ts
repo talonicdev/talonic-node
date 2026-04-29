@@ -47,13 +47,23 @@ export interface ExtractionList {
 /**
  * Filter and pagination options for listing extractions.
  *
+ * Uses cursor-based pagination per the OpenAPI spec.
+ *
  * @public
  */
 export interface ListExtractionsParams {
   document_id?: string
   schema_id?: string
   status?: "complete" | "processing" | "failed"
+  /** Cursor token from a previous response's `pagination.next_cursor`. */
+  cursor?: string
+  /** Page size. */
+  limit?: number
+  /** Sort order. */
+  order?: string
+  /** @deprecated Use `cursor` + `limit` instead. */
   page?: number
+  /** @deprecated Use `limit` instead. */
   per_page?: number
 }
 

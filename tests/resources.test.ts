@@ -371,34 +371,120 @@ describe("talonic.fields", () => {
 })
 
 describe("talonic.documents.filter", () => {
-  it("posts to /v1/documents/filter with field name passed straight as fieldId", async () => {
-    const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
+  function fieldsListResponse(
+    fields: Array<{ id: string; canonical_name: string; data_type?: string }>,
+  ) {
+    return new Response(JSON.stringify({ data: fields }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })
+  }
+  function filterResponse() {
+    return new Response(JSON.stringify({ documents: [], total: 0 }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })
+  }
+
+  it("resolves field names to UUIDs via /v1/fields?search=", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        fieldsListResponse([
+          { id: "fld-uuid-other", canonical_name: "vendor_address" },
+          { id: "fld-uuid-exact", canonical_name: "vendor_name" },
+        ]),
+      )
+      .mockResolvedValueOnce(filterResponse())
+    const talonic = new Talonic({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+
     await talonic.documents.filter({
       conditions: [{ field: "vendor_name", operator: "eq", value: "Acme" }],
     })
-    const [url, init] = lastCall(fetchFn)
-    expect(url).toContain("/v1/documents/filter")
-    expect(init.method).toBe("POST")
-    const body = JSON.parse(init.body as string) as {
-      conditions: Array<{ fieldId: string; operator: string; value: string }>
+
+    expect(fetchFn.mock.calls[0]?.[0]).toContain("/v1/fields")
+    expect(fetchFn.mock.calls[0]?.[0]).toContain("search=vendor_name")
+    expect(fetchFn.mock.calls[1]?.[0]).toContain("/v1/documents/filter")
+    const body = JSON.parse((fetchFn.mock.calls[1]?.[1] as { body: string }).body) as {
+      conditions: Array<{ fieldId: string }>
     }
-    expect(body.conditions[0]?.fieldId).toBe("vendor_name")
-    expect(body.conditions[0]?.operator).toBe("eq")
-    expect(body.conditions[0]?.value).toBe("Acme")
+    expect(body.conditions[0]?.fieldId).toBe("fld-uuid-exact")
   })
 
-  it("passes through explicit fieldId unchanged", async () => {
+  it("passes through explicit fieldId without an autocomplete lookup", async () => {
     const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
     await talonic.documents.filter({
-      conditions: [{ fieldId: "fld_uuid", operator: "between", value: 100, valueTo: 500 }],
+      conditions: [
+        {
+          fieldId: "11111111-2222-3333-4444-555555555555",
+          operator: "between",
+          value: 100,
+          valueTo: 500,
+        },
+      ],
     })
+    expect(fetchFn).toHaveBeenCalledOnce()
+    expect(lastCall(fetchFn)[0]).toContain("/v1/documents/filter")
     const body = JSON.parse(lastCall(fetchFn)[1].body as string) as {
       conditions: Array<{ fieldId: string; operator: string; value: number; valueTo: number }>
     }
-    expect(body.conditions[0]?.fieldId).toBe("fld_uuid")
+    expect(body.conditions[0]?.fieldId).toBe("11111111-2222-3333-4444-555555555555")
     expect(body.conditions[0]?.operator).toBe("between")
-    expect(body.conditions[0]?.value).toBe(100)
-    expect(body.conditions[0]?.valueTo).toBe(500)
+  })
+
+  it("passes through a UUID-shaped field name without autocomplete", async () => {
+    const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
+    await talonic.documents.filter({
+      conditions: [{ field: "11111111-2222-3333-4444-555555555555", operator: "is_not_empty" }],
+    })
+    expect(fetchFn).toHaveBeenCalledOnce()
+    const body = JSON.parse(lastCall(fetchFn)[1].body as string) as {
+      conditions: Array<{ fieldId: string }>
+    }
+    expect(body.conditions[0]?.fieldId).toBe("11111111-2222-3333-4444-555555555555")
+  })
+
+  it("caches resolution: same name across conditions does only one autocomplete call", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(fieldsListResponse([{ id: "fld-uuid-x", canonical_name: "amount" }]))
+      .mockResolvedValueOnce(filterResponse())
+    const talonic = new Talonic({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+
+    await talonic.documents.filter({
+      conditions: [
+        { field: "amount", operator: "gt", value: 100 },
+        { field: "amount", operator: "lt", value: 1000 },
+      ],
+    })
+
+    // Only one /v1/fields call, then one filter call.
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(fetchFn.mock.calls[0]?.[0]).toContain("/v1/fields")
+    expect(fetchFn.mock.calls[1]?.[0]).toContain("/v1/documents/filter")
+  })
+
+  it("throws field_not_found when no field matches", async () => {
+    const fetchFn = vi.fn().mockResolvedValueOnce(fieldsListResponse([]))
+    const talonic = new Talonic({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+
+    await expect(
+      talonic.documents.filter({
+        conditions: [{ field: "no_such_field", operator: "eq", value: "x" }],
+      }),
+    ).rejects.toThrow(/No field matches/)
   })
 
   it("throws when condition has neither field nor fieldId", async () => {
@@ -412,17 +498,27 @@ describe("talonic.documents.filter", () => {
 
   it("forwards search, sort, page, limit, and source as source_id (not sourceConnectionId)", async () => {
     const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
+    // Use UUIDs so we skip the autocomplete resolver entirely.
     await talonic.documents.filter({
-      conditions: [{ field: "amount", operator: "gt", value: 1000 }],
+      conditions: [
+        {
+          fieldId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          operator: "gt",
+          value: 1000,
+        },
+      ],
       search: "invoice",
-      sort: { field: "invoice_date", direction: "desc" },
+      sort: { fieldId: "11111111-2222-3333-4444-555555555555", direction: "desc" },
       page: 2,
       limit: 50,
       source_connection_id: "src_1",
     })
     const body = JSON.parse(lastCall(fetchFn)[1].body as string) as Record<string, unknown>
     expect(body["search"]).toBe("invoice")
-    expect(body["sort"]).toEqual({ fieldId: "invoice_date", direction: "desc" })
+    expect(body["sort"]).toEqual({
+      fieldId: "11111111-2222-3333-4444-555555555555",
+      direction: "desc",
+    })
     expect(body["page"]).toBe(2)
     expect(body["limit"]).toBe(50)
     // OpenAPI spec uses `source_id`, not `sourceConnectionId`.

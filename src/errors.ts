@@ -3,9 +3,15 @@ import type { RateLimitInfo } from "./types.js"
 /**
  * Constructor argument shape shared by every TalonicError subclass.
  *
+ * Marked with the `_` prefix to discourage importing it from the
+ * package surface, and intentionally not exported. Subclasses that
+ * need an `init` parameter restate the shape inline so this type does
+ * not appear in the published `.d.ts` even when `stripInternal` cannot
+ * reach across construct-signature references.
+ *
  * @internal
  */
-interface TalonicErrorInit {
+type _TalonicErrorInit = {
   code: string
   message: string
   status: number
@@ -34,7 +40,13 @@ export class TalonicError extends Error {
   readonly retryable: boolean
   readonly requestId?: string
 
-  constructor(init: TalonicErrorInit) {
+  constructor(init: {
+    code: string
+    message: string
+    status: number
+    retryable: boolean
+    requestId?: string
+  }) {
     super(init.message)
     this.name = "TalonicError"
     this.code = init.code
@@ -51,7 +63,13 @@ export class TalonicError extends Error {
  * @public
  */
 export class TalonicAuthError extends TalonicError {
-  constructor(init: TalonicErrorInit) {
+  constructor(init: {
+    code: string
+    message: string
+    status: number
+    retryable: boolean
+    requestId?: string
+  }) {
     super(init)
     this.name = "TalonicAuthError"
   }
@@ -63,7 +81,13 @@ export class TalonicAuthError extends TalonicError {
  * @public
  */
 export class TalonicNotFoundError extends TalonicError {
-  constructor(init: TalonicErrorInit) {
+  constructor(init: {
+    code: string
+    message: string
+    status: number
+    retryable: boolean
+    requestId?: string
+  }) {
     super(init)
     this.name = "TalonicNotFoundError"
   }
@@ -76,7 +100,13 @@ export class TalonicNotFoundError extends TalonicError {
  * @public
  */
 export class TalonicValidationError extends TalonicError {
-  constructor(init: TalonicErrorInit) {
+  constructor(init: {
+    code: string
+    message: string
+    status: number
+    retryable: boolean
+    requestId?: string
+  }) {
     super(init)
     this.name = "TalonicValidationError"
   }
@@ -93,7 +123,15 @@ export class TalonicRateLimitError extends TalonicError {
   /** Rate-limit headers from the response that triggered this error. */
   readonly rateLimit: RateLimitInfo
 
-  constructor(init: TalonicErrorInit & { rateLimit: RateLimitInfo }) {
+  constructor(
+    init: {
+      code: string
+      message: string
+      status: number
+      retryable: boolean
+      requestId?: string
+    } & { rateLimit: RateLimitInfo },
+  ) {
     super(init)
     this.name = "TalonicRateLimitError"
     this.rateLimit = init.rateLimit
@@ -108,7 +146,13 @@ export class TalonicRateLimitError extends TalonicError {
  * @public
  */
 export class TalonicServerError extends TalonicError {
-  constructor(init: TalonicErrorInit) {
+  constructor(init: {
+    code: string
+    message: string
+    status: number
+    retryable: boolean
+    requestId?: string
+  }) {
     super(init)
     this.name = "TalonicServerError"
   }
@@ -185,7 +229,7 @@ export function errorFromResponse(input: {
   const requestId = parsed?.requestId
   const retryable = parsed?.retryable ?? defaultRetryableForStatus(status)
 
-  const init: TalonicErrorInit = { code, message, status, retryable, requestId }
+  const init: _TalonicErrorInit = { code, message, status, retryable, requestId }
 
   if (status === 401 || status === 403) return new TalonicAuthError(init)
   if (status === 404) return new TalonicNotFoundError(init)
