@@ -38,16 +38,13 @@ describe("CLI bin via symlink (regression: import.meta.url guard)", () => {
     if (workDir) rmSync(workDir, { recursive: true, force: true })
   })
 
-  it.skipIf(!distExists)(
-    "prints VERSION when the bundled CLI is invoked through a symlink",
-    () => {
-      const result = spawnSync(process.execPath, [symlinkPath, "--version"], {
-        encoding: "utf8",
-      })
-      expect(result.status).toBe(0)
-      expect(result.stdout.trim()).toBe(VERSION)
-    },
-  )
+  it.skipIf(!distExists)("prints VERSION when the bundled CLI is invoked through a symlink", () => {
+    const result = spawnSync(process.execPath, [symlinkPath, "--version"], {
+      encoding: "utf8",
+    })
+    expect(result.status).toBe(0)
+    expect(result.stdout.trim()).toBe(VERSION)
+  })
 
   it.skipIf(!distExists)("prints help when the symlinked CLI is invoked with --help", () => {
     const result = spawnSync(process.execPath, [symlinkPath, "--help"], {
