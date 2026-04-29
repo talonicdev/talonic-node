@@ -2,9 +2,9 @@
 
 Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document.
 
-> **Status:** v0.1.0. Core surface stable. The `extract` endpoint is currently being stabilised on the production API; see [Known issues](#known-issues).
+> **Status:** v0.1.2. Core surface stable. Live `extract` is verified end-to-end against production; a couple of edge cases are tracked in [Known issues](#known-issues).
 
-> **Looking for the AI agent path?** [`@talonic/mcp`](../talonic-mcp/) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly.
+> **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly.
 
 ## Install
 
@@ -135,8 +135,18 @@ try {
 ## Known issues
 
 - **Auto-discovery extract (no schema) currently returns 500 on production.** Always provide a `schema` or `schema_id` in v0.1.
-- **The `simplified-fields` schema format `{ fields: [...] }` is unstable.** Use the flat-map format (`{ vendor_name: "string", ... }`) or full JSON Schema instead.
-- **Live extract reliability is being investigated.** Engineering is tracking; see project notes.
+- **Only the full JSON Schema format is reliable today.** The flat key-type map (`{ vendor_name: "string", ... }`) is silently accepted by the API but currently saves with empty `properties`. The `{ fields: [...] }` simplified format is also unstable. Until the API normalises both, pass full JSON Schema:
+  ```ts
+  schema: {
+    type: "object",
+    properties: {
+      vendor_name: { type: "string", title: "Vendor Name" },
+      total_amount: { type: "number", title: "Total Amount" },
+    },
+    required: ["vendor_name", "total_amount"],
+  }
+  ```
+- **`documents.filter()` field-name resolution is limited in production.** Names that `talonic_search` returns as live `displayName` / `canonicalName` values currently fail with `field_not_found` when used as the `field` parameter. Until the API-side resolver is fixed, pass `field_id` directly (the value of `fields[].id` from a `search` response).
 
 ## Development
 
