@@ -7,6 +7,8 @@
  * @internal
  */
 
+import { realpathSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { Talonic } from "./client.js"
 import { TalonicError } from "./errors.js"
 import type { ExtractParams, SchemaDefinition } from "./resources/extract.js"
@@ -255,9 +257,35 @@ export async function run(
   }
 }
 
-// Auto-run when invoked as a binary. The shebang and the import.meta.url
-// check together ensure this only runs when called directly, not when
-// imported (e.g. by tests).
-if (import.meta.url === `file://${process.argv[1]}`) {
+/**
+ * True when this module is the process entry point.
+ *
+ * `process.argv[1]` is the path the OS handed to `node` (often a symlink
+ * inside `node_modules/.bin/`), while `import.meta.url` reflects the
+ * resolved module URL. Comparing the two as strings is brittle: when
+ * launched via the npm-managed bin symlink they disagree, and the guard
+ * incorrectly returns `false`, leaving the CLI silent.
+ *
+ * Resolving both sides with `realpathSync` makes the comparison robust
+ * against symlinks while still preventing auto-run when the module is
+ * imported (e.g. from tests).
+ *
+ * @internal
+ */
+function isDirectInvocation(): boolean {
+  if (!process.argv[1]) return false
+  try {
+    const argvPath = realpathSync(process.argv[1])
+    const metaPath = realpathSync(fileURLToPath(import.meta.url))
+    return argvPath === metaPath
+  } catch {
+    return false
+  }
+}
+
+// Auto-run when invoked as a binary. The shebang plus this guard ensure
+// the CLI runs when called directly (including via the npm bin symlink)
+// but not when imported.
+if (isDirectInvocation()) {
   run().then((code) => process.exit(code))
 }
