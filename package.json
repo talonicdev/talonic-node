@@ -1,6 +1,6 @@
 {
   "name": "@talonic/node",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document.",
   "license": "MIT",
   "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
