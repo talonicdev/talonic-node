@@ -54,7 +54,7 @@ export class Talonic {
   constructor(config: TalonicConfig) {
     this.#transport = new Transport(config)
     this.fields = new Fields(this.#transport)
-    this.documents = new Documents(this.#transport, this.fields)
+    this.documents = new Documents(this.#transport)
     this.extractions = new Extractions(this.#transport)
     this.schemas = new Schemas(this.#transport)
     this.jobs = new Jobs(this.#transport)

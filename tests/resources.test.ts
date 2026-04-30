@@ -371,51 +371,22 @@ describe("talonic.fields", () => {
 })
 
 describe("talonic.documents.filter", () => {
-  function fieldsListResponse(
-    fields: Array<{ id: string; canonical_name: string; data_type?: string }>,
-  ) {
-    return new Response(JSON.stringify({ data: fields }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    })
-  }
-  function filterResponse() {
-    return new Response(JSON.stringify({ documents: [], total: 0 }), {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    })
-  }
-
-  it("resolves field names to UUIDs via /v1/fields?search=", async () => {
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValueOnce(
-        fieldsListResponse([
-          { id: "fld-uuid-other", canonical_name: "vendor_address" },
-          { id: "fld-uuid-exact", canonical_name: "vendor_name" },
-        ]),
-      )
-      .mockResolvedValueOnce(filterResponse())
-    const talonic = new Talonic({
-      apiKey: "k",
-      fetch: fetchFn as unknown as typeof fetch,
-      maxRetries: 0,
-    })
-
+  it("passes a canonical field name straight through to the API in fieldId", async () => {
+    const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
     await talonic.documents.filter({
-      conditions: [{ field: "vendor_name", operator: "eq", value: "Acme" }],
+      conditions: [{ field: "vendor.name", operator: "eq", value: "Acme" }],
     })
 
-    expect(fetchFn.mock.calls[0]?.[0]).toContain("/v1/fields")
-    expect(fetchFn.mock.calls[0]?.[0]).toContain("search=vendor_name")
-    expect(fetchFn.mock.calls[1]?.[0]).toContain("/v1/documents/filter")
-    const body = JSON.parse((fetchFn.mock.calls[1]?.[1] as { body: string }).body) as {
+    // No /v1/fields lookup: the API resolves the canonical name itself.
+    expect(fetchFn).toHaveBeenCalledOnce()
+    expect(lastCall(fetchFn)[0]).toContain("/v1/documents/filter")
+    const body = JSON.parse(lastCall(fetchFn)[1].body as string) as {
       conditions: Array<{ fieldId: string }>
     }
-    expect(body.conditions[0]?.fieldId).toBe("fld-uuid-exact")
+    expect(body.conditions[0]?.fieldId).toBe("vendor.name")
   })
 
-  it("passes through explicit fieldId without an autocomplete lookup", async () => {
+  it("passes through explicit fieldId UUID unchanged", async () => {
     const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
     await talonic.documents.filter({
       conditions: [
@@ -436,7 +407,7 @@ describe("talonic.documents.filter", () => {
     expect(body.conditions[0]?.operator).toBe("between")
   })
 
-  it("passes through a UUID-shaped field name without autocomplete", async () => {
+  it("passes a UUID-shaped value in `field` straight through too", async () => {
     const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
     await talonic.documents.filter({
       conditions: [{ field: "11111111-2222-3333-4444-555555555555", operator: "is_not_empty" }],
@@ -448,17 +419,8 @@ describe("talonic.documents.filter", () => {
     expect(body.conditions[0]?.fieldId).toBe("11111111-2222-3333-4444-555555555555")
   })
 
-  it("caches resolution: same name across conditions does only one autocomplete call", async () => {
-    const fetchFn = vi
-      .fn()
-      .mockResolvedValueOnce(fieldsListResponse([{ id: "fld-uuid-x", canonical_name: "amount" }]))
-      .mockResolvedValueOnce(filterResponse())
-    const talonic = new Talonic({
-      apiKey: "k",
-      fetch: fetchFn as unknown as typeof fetch,
-      maxRetries: 0,
-    })
-
+  it("multiple conditions with the same name still produce a single filter call", async () => {
+    const { talonic, fetchFn } = makeClient({ documents: [], total: 0 })
     await talonic.documents.filter({
       conditions: [
         { field: "amount", operator: "gt", value: 100 },
@@ -466,25 +428,15 @@ describe("talonic.documents.filter", () => {
       ],
     })
 
-    // Only one /v1/fields call, then one filter call.
-    expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(fetchFn.mock.calls[0]?.[0]).toContain("/v1/fields")
-    expect(fetchFn.mock.calls[1]?.[0]).toContain("/v1/documents/filter")
-  })
-
-  it("throws field_not_found when no field matches", async () => {
-    const fetchFn = vi.fn().mockResolvedValueOnce(fieldsListResponse([]))
-    const talonic = new Talonic({
-      apiKey: "k",
-      fetch: fetchFn as unknown as typeof fetch,
-      maxRetries: 0,
-    })
-
-    await expect(
-      talonic.documents.filter({
-        conditions: [{ field: "no_such_field", operator: "eq", value: "x" }],
-      }),
-    ).rejects.toThrow(/No field matches/)
+    // No /v1/fields pre-resolution; just the single filter POST.
+    expect(fetchFn).toHaveBeenCalledOnce()
+    expect(lastCall(fetchFn)[0]).toContain("/v1/documents/filter")
+    const body = JSON.parse(lastCall(fetchFn)[1].body as string) as {
+      conditions: Array<{ fieldId: string; operator: string }>
+    }
+    expect(body.conditions).toHaveLength(2)
+    expect(body.conditions[0]?.fieldId).toBe("amount")
+    expect(body.conditions[1]?.fieldId).toBe("amount")
   })
 
   it("throws when condition has neither field nor fieldId", async () => {

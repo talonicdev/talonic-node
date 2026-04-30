@@ -2,7 +2,7 @@
 
 Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document.
 
-> **Status:** v0.1.2. Core surface stable. Live `extract` is verified end-to-end against production; a couple of edge cases are tracked in [Known issues](#known-issues).
+> **Status:** v0.1.3. Core surface stable. Live `extract` is verified end-to-end against production. `documents.filter()` now passes canonical field names directly to the API for server-side resolution; remaining edge cases are tracked in [Known issues](#known-issues).
 
 > **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly.
 
@@ -135,7 +135,7 @@ try {
 ## Known issues
 
 - **Auto-discovery extract (no schema) currently returns 500 on production.** Always provide a `schema` or `schema_id` in v0.1.
-- **Only the full JSON Schema format is reliable today.** The flat key-type map (`{ vendor_name: "string", ... }`) is silently accepted by the API but currently saves with empty `properties`. The `{ fields: [...] }` simplified format is also unstable. Until the API normalises both, pass full JSON Schema:
+- **Schema definitions: prefer full JSON Schema for now.** The flat key-type map (`{ vendor_name: "string", ... }`) is documented as supported and the API's own error message lists it as accepted, but as of writing the server-side normaliser does not actually translate it. Until that ships, send full JSON Schema:
   ```ts
   schema: {
     type: "object",
@@ -146,7 +146,7 @@ try {
     required: ["vendor_name", "total_amount"],
   }
   ```
-- **`documents.filter()` field-name resolution is limited in production.** Names that `talonic_search` returns as live `displayName` / `canonicalName` values currently fail with `field_not_found` when used as the `field` parameter. Until the API-side resolver is fixed, pass `field_id` directly (the value of `fields[].id` from a `search` response).
+- **`is_not_empty` filter currently underreports.** A filter condition with `operator: "is_not_empty"` may return zero documents even when the field has populated values in the workspace. The other operators (`eq`, `gt`, `gte`, `lt`, `lte`, `contains`, `between`, `is_empty`) work as expected. Tracked separately.
 
 ## Development
 

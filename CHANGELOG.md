@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-30
+
+### Changed
+
+- `documents.filter()` no longer pre-resolves field names locally via `/v1/fields?search=`. Canonical names like `"vendor.name"` or `"policy.0_coverage_type"` are now passed directly to the API, which resolves them server-side. This removes a redundant network roundtrip per filter call and stops the SDK from short-circuiting valid names that the API can resolve. Calls that previously failed with a local `field_not_found` now reach the API and surface its `VALIDATION_ERROR` response with `request_id` and `message`.
+- The `Documents` resource constructor no longer takes a `Fields` dependency.
+
+### Added
+
+- `Schema.short_id` field. The API now returns a human-readable identifier (`"SCH-XXXXXXXX"`) alongside the UUID. Both forms are accepted on `/v1/schemas/:id` reads.
+
+### Removed
+
+- The local field-name resolution loop, including the `UUID_REGEX` shortcut and the in-flight resolution cache. With server-side resolution, none of this is needed.
+
 ## [0.1.2] - 2026-04-29
 
 ### Fixed

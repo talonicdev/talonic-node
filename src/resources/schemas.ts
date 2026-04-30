@@ -10,7 +10,14 @@ import type { Pagination } from "./pagination.js"
  * @public
  */
 export interface Schema {
+  /** Canonical UUID identifier. */
   id: string
+  /**
+   * Short, human-readable identifier (e.g. `"SCH-3A4D79D2"`). Visible
+   * in the Talonic dashboard. Both `id` and `short_id` are accepted as
+   * lookup keys on `/v1/schemas/:id`.
+   */
+  short_id?: string
   name: string
   description?: string
   field_count?: number
