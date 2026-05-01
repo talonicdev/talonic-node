@@ -3,7 +3,7 @@ import { defineConfig } from "tsup"
 export default defineConfig([
   // Library bundle (ESM + CJS + types).
   {
-    entry: { index: "src/index.ts" },
+    entry: { index: "src/index.ts", content: "src/content/index.ts" },
     format: ["esm", "cjs"],
     dts: true,
     sourcemap: true,
