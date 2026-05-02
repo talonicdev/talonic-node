@@ -1,0 +1,261 @@
+[
+  {
+    "slug": "sdk-introduction",
+    "parentSlug": "sdk-overview",
+    "title": "Introduction",
+    "seoTitle": "Node SDK Introduction — Talonic Docs",
+    "description": "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document with a single function call.",
+    "content": [
+      { "type": "paragraph", "text": "The `@talonic/node` SDK is the official Node.js and TypeScript client for the Talonic API. Extract structured, schema-validated data from any document with a single function call." },
+      { "type": "paragraph", "text": "Zero runtime dependencies. Requires Node.js 18 or newer." },
+      { "type": "callout", "text": "Looking for the AI agent path? [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly." }
+    ],
+    "related": [
+      { "label": "Installation", "slug": "sdk-installation" },
+      { "label": "Quick Start", "slug": "sdk-quickstart" },
+      { "label": "MCP Server", "slug": "mcp-introduction" }
+    ],
+    "faq": [
+      { "question": "What is the Talonic Node SDK?", "answer": "The official Node.js and TypeScript client for extracting structured, schema-validated data from documents via the Talonic API." },
+      { "question": "What Node.js version is required?", "answer": "Node.js 18 or newer. The SDK has zero runtime dependencies." }
+    ],
+    "mentions": ["Node.js", "TypeScript", "SDK", "npm", "document extraction"]
+  },
+  {
+    "slug": "sdk-installation",
+    "parentSlug": "sdk-overview",
+    "title": "Installation",
+    "seoTitle": "Install Talonic Node SDK — Talonic Docs",
+    "description": "Install the @talonic/node package via npm. Zero runtime dependencies, requires Node.js 18+.",
+    "content": [
+      { "type": "code", "language": "bash", "title": "Install via npm", "code": "npm install @talonic/node" },
+      { "type": "paragraph", "text": "Requires Node.js 18 or newer. Zero runtime dependencies." }
+    ],
+    "related": [
+      { "label": "Authentication", "slug": "sdk-authentication" },
+      { "label": "Quick Start", "slug": "sdk-quickstart" }
+    ],
+    "faq": [
+      { "question": "How do I install the Talonic Node SDK?", "answer": "Run npm install @talonic/node. Requires Node.js 18 or newer. Zero runtime dependencies." }
+    ],
+    "mentions": ["npm", "Node.js"]
+  },
+  {
+    "slug": "sdk-authentication",
+    "parentSlug": "sdk-overview",
+    "title": "Authentication",
+    "seoTitle": "SDK Authentication — Talonic Docs",
+    "description": "Get a Talonic API key and configure it for the Node SDK. Each workspace is isolated with private documents and schemas.",
+    "content": [
+      { "type": "paragraph", "text": "Every user runs against their own Talonic workspace, so each user needs their own key. Workspaces are isolated; your documents and schemas are private to you." },
+      { "type": "list", "ordered": true, "items": [
+        "Sign up at [https://app.talonic.com](https://app.talonic.com). Free tier: 50 extractions per day, no credit card.",
+        "Settings &rarr; API Keys &rarr; Create New Key.",
+        "Copy the `tlnc_` value.",
+        "Set it as the `TALONIC_API_KEY` environment variable, or pass it directly to the client constructor."
+      ]},
+      { "type": "callout", "text": "Keep your API key secret. Do not expose it in client-side code or version control." }
+    ],
+    "related": [
+      { "label": "Configuration", "slug": "sdk-configuration" },
+      { "label": "API Authentication", "slug": "authentication" }
+    ],
+    "faq": [
+      { "question": "Where do I get a Talonic API key?", "answer": "Sign up at app.talonic.com, go to Settings → API Keys → Create New Key. Free tier includes 50 extractions per day." }
+    ],
+    "mentions": ["API key", "authentication", "workspace"]
+  },
+  {
+    "slug": "sdk-quickstart",
+    "parentSlug": "sdk-overview",
+    "title": "Quick Start",
+    "seoTitle": "Node SDK Quick Start — Talonic Docs",
+    "description": "Extract structured data from a document in five lines of TypeScript using the Talonic Node SDK.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Extract an invoice", "code": "import { Talonic } from \"@talonic/node\"\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\nconst result = await talonic.extract({\n  file_path: \"./invoice.pdf\",\n  schema: {\n    vendor_name: \"string\",\n    invoice_number: \"string\",\n    total_amount: \"number\",\n    due_date: \"date\",\n  },\n})\n\nconsole.log(result.data)\n// { vendor_name: \"Acme Corp\", invoice_number: \"INV-2024-0847\", total_amount: 14250, due_date: \"2024-03-15\" }" }
+    ],
+    "related": [
+      { "label": "Extract", "slug": "sdk-extract" },
+      { "label": "Configuration", "slug": "sdk-configuration" },
+      { "label": "Schemas", "slug": "sdk-schemas" }
+    ],
+    "faq": [
+      { "question": "How do I extract data from a document with the SDK?", "answer": "Call talonic.extract() with a file_path and a schema defining the fields you want. Returns structured JSON with confidence scores." }
+    ],
+    "mentions": ["extract", "schema", "TypeScript", "quickstart"]
+  },
+  {
+    "slug": "sdk-configuration",
+    "parentSlug": "sdk-client",
+    "title": "Configuration",
+    "seoTitle": "SDK Configuration — Talonic Docs",
+    "description": "Configure the Talonic client with API key, base URL, timeout, max retries, and custom fetch function.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Client configuration", "code": "const talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  baseUrl: \"https://api.talonic.com\",   // default\n  timeout: 60_000,                       // ms; default 60s\n  maxRetries: 3,                         // 429, 500, 502, 503, 504, network, timeout\n  fetch: customFetch,                    // optional override (e.g. for testing)\n})" },
+      { "type": "param-table", "title": "Constructor options", "params": [
+        { "name": "apiKey", "type": "string", "required": true, "description": "Your Talonic API key. Starts with `tlnc_`." },
+        { "name": "baseUrl", "type": "string", "description": "API base URL. Default: `https://api.talonic.com`." },
+        { "name": "timeout", "type": "number", "description": "Request timeout in milliseconds. Default: `60000`." },
+        { "name": "maxRetries", "type": "number", "description": "Maximum retry attempts for transient errors. Default: `3`." },
+        { "name": "fetch", "type": "function", "description": "Custom fetch implementation for testing or proxying." }
+      ]}
+    ],
+    "related": [
+      { "label": "Retries", "slug": "sdk-retries" },
+      { "label": "Error Classes", "slug": "sdk-error-classes" }
+    ],
+    "faq": [],
+    "mentions": ["configuration", "timeout", "retries", "fetch"]
+  },
+  {
+    "slug": "sdk-extract",
+    "parentSlug": "sdk-client",
+    "title": "Extract",
+    "seoTitle": "SDK Extract Method — Talonic Docs",
+    "description": "The top-level talonic.extract() method for single-call document extraction with schema validation.",
+    "content": [
+      { "type": "paragraph", "text": "The top-level `extract()` method is the fastest way to get structured data from a document. Provide a file and a schema, get back validated JSON." },
+      { "type": "code", "language": "typescript", "title": "Basic extraction", "code": "const result = await talonic.extract({\n  file_path: \"./invoice.pdf\",\n  schema: {\n    vendor_name: \"string\",\n    invoice_number: \"string\",\n    total_amount: \"number\",\n  },\n})" },
+      { "type": "paragraph", "text": "You can also pass `file_url`, `schema_id` (for saved schemas), or a full JSON Schema definition." }
+    ],
+    "related": [
+      { "label": "Quick Start", "slug": "sdk-quickstart" },
+      { "label": "Schemas", "slug": "sdk-schemas" },
+      { "label": "POST /v1/extract", "slug": "post-extract" }
+    ],
+    "faq": [],
+    "mentions": ["extract", "schema", "file_path", "file_url"]
+  },
+  {
+    "slug": "sdk-documents",
+    "parentSlug": "sdk-resources",
+    "title": "Documents",
+    "seoTitle": "SDK Documents Resource — Talonic Docs",
+    "description": "List, get, delete, and re-extract documents using the Talonic Node SDK documents resource.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Documents API", "code": "// List documents with pagination\nawait talonic.documents.list({ per_page: 50 })\n\n// Get a single document\nawait talonic.documents.get(id)\n\n// Get OCR markdown\nawait talonic.documents.getMarkdown(id)\n\n// Re-extract a document\nawait talonic.documents.reExtract(id)\n\n// Delete a document\nawait talonic.documents.delete(id)" }
+    ],
+    "related": [
+      { "label": "Documents API", "slug": "list-documents" },
+      { "label": "Extractions", "slug": "sdk-extractions" }
+    ],
+    "faq": [],
+    "mentions": ["documents", "list", "get", "delete", "markdown", "re-extract"]
+  },
+  {
+    "slug": "sdk-extractions",
+    "parentSlug": "sdk-resources",
+    "title": "Extractions",
+    "seoTitle": "SDK Extractions Resource — Talonic Docs",
+    "description": "Query extraction results, retrieve structured data in JSON or CSV, and submit field corrections via the Node SDK.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Extractions API", "code": "// List extractions for a document\nawait talonic.extractions.list({ document_id })\n\n// Get extraction metadata\nawait talonic.extractions.get(id)\n\n// Get structured data as object\nawait talonic.extractions.getData(id)\n\n// Get structured data as CSV string\nawait talonic.extractions.getData(id, { format: \"csv\" })\n\n// Submit corrections\nawait talonic.extractions.patch(id, { corrections: [...] })" }
+    ],
+    "related": [
+      { "label": "Extractions API", "slug": "list-extractions" },
+      { "label": "Documents", "slug": "sdk-documents" }
+    ],
+    "faq": [],
+    "mentions": ["extractions", "corrections", "CSV", "structured data"]
+  },
+  {
+    "slug": "sdk-schemas",
+    "parentSlug": "sdk-resources",
+    "title": "Schemas",
+    "seoTitle": "SDK Schemas Resource — Talonic Docs",
+    "description": "Create, list, get, update, and delete reusable extraction schemas via the Talonic Node SDK.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Schemas API", "code": "// List all schemas\nawait talonic.schemas.list()\n\n// Get a schema\nawait talonic.schemas.get(id)\n\n// Create a new schema\nawait talonic.schemas.create({ name, definition })\n\n// Update a schema\nawait talonic.schemas.update(id, { ... })\n\n// Delete a schema\nawait talonic.schemas.delete(id)" }
+    ],
+    "related": [
+      { "label": "Schemas API", "slug": "list-schemas" },
+      { "label": "Extract", "slug": "sdk-extract" }
+    ],
+    "faq": [],
+    "mentions": ["schemas", "create", "update", "delete"]
+  },
+  {
+    "slug": "sdk-jobs",
+    "parentSlug": "sdk-resources",
+    "title": "Jobs",
+    "seoTitle": "SDK Jobs Resource — Talonic Docs",
+    "description": "Create, list, get results, and cancel asynchronous batch extraction jobs via the Node SDK.",
+    "content": [
+      { "type": "code", "language": "typescript", "title": "Jobs API", "code": "// Create a batch job\nawait talonic.jobs.create({ schema_id, document_ids })\n\n// List all jobs\nawait talonic.jobs.list()\n\n// Get job status\nawait talonic.jobs.get(id)\n\n// Get job results\nawait talonic.jobs.getResults(id)\n\n// Cancel a running job\nawait talonic.jobs.cancel(id)" }
+    ],
+    "related": [
+      { "label": "Jobs API", "slug": "list-jobs" },
+      { "label": "Batch Inference", "slug": "batch-overview" }
+    ],
+    "faq": [],
+    "mentions": ["jobs", "batch", "asynchronous", "cancel"]
+  },
+  {
+    "slug": "sdk-cli-usage",
+    "parentSlug": "sdk-cli",
+    "title": "Usage",
+    "seoTitle": "Talonic CLI Usage — Talonic Docs",
+    "description": "Use the talonic CLI binary for command-line extraction, schema management, and document listing.",
+    "content": [
+      { "type": "paragraph", "text": "The package ships with a `talonic` binary for command-line usage:" },
+      { "type": "code", "language": "bash", "title": "CLI examples", "code": "talonic schemas list\ntalonic documents list --per-page=20\ntalonic extract ./invoice.pdf \\\n  --schema='{\"vendor_name\":\"string\",\"total_amount\":\"number\"}'\ntalonic --help" }
+    ],
+    "related": [
+      { "label": "Extract", "slug": "sdk-extract" },
+      { "label": "Schemas", "slug": "sdk-schemas" }
+    ],
+    "faq": [
+      { "question": "Does the Talonic SDK include a CLI?", "answer": "Yes. The @talonic/node package ships a talonic binary for command-line extraction, schema management, and document operations." }
+    ],
+    "mentions": ["CLI", "command line", "talonic binary"]
+  },
+  {
+    "slug": "sdk-error-classes",
+    "parentSlug": "sdk-errors",
+    "title": "Error Classes",
+    "seoTitle": "SDK Error Classes — Talonic Docs",
+    "description": "Typed error hierarchy for the Talonic Node SDK: TalonicError base class with subclasses for auth, validation, rate limit, server, network, and timeout errors.",
+    "content": [
+      { "type": "paragraph", "text": "Every failure is a `TalonicError` subclass with `code`, `status`, `requestId`, and `message` properties:" },
+      { "type": "param-table", "title": "Error classes", "params": [
+        { "name": "TalonicAuthError", "type": "401, 403", "description": "Authentication or authorization failure." },
+        { "name": "TalonicNotFoundError", "type": "404", "description": "Resource not found." },
+        { "name": "TalonicValidationError", "type": "400, 409, 413, 422", "description": "Request validation failure." },
+        { "name": "TalonicRateLimitError", "type": "429", "description": "Rate limit exceeded (after retries exhausted). Includes `rateLimit.resetAt`." },
+        { "name": "TalonicServerError", "type": "5xx", "description": "Server error (after retries exhausted)." },
+        { "name": "TalonicNetworkError", "type": "—", "description": "DNS or TCP connection failure." },
+        { "name": "TalonicTimeoutError", "type": "—", "description": "Request exceeded configured timeout." }
+      ]},
+      { "type": "code", "language": "typescript", "title": "Error handling", "code": "import {\n  TalonicError,\n  TalonicRateLimitError,\n} from \"@talonic/node\"\n\ntry {\n  await talonic.extract({ ... })\n} catch (err) {\n  if (err instanceof TalonicRateLimitError) {\n    console.log(`Reset at ${err.rateLimit.resetAt}`)\n  } else if (err instanceof TalonicError) {\n    console.error(`${err.code} (status ${err.status}, request ${err.requestId}): ${err.message}`)\n  }\n}" }
+    ],
+    "related": [
+      { "label": "Retries", "slug": "sdk-retries" },
+      { "label": "Error Codes", "slug": "error-codes" }
+    ],
+    "faq": [
+      { "question": "What error types does the Talonic SDK throw?", "answer": "TalonicAuthError (401/403), TalonicNotFoundError (404), TalonicValidationError (400/409/413/422), TalonicRateLimitError (429), TalonicServerError (5xx), TalonicNetworkError, and TalonicTimeoutError." }
+    ],
+    "mentions": ["TalonicError", "error handling", "typed errors"]
+  },
+  {
+    "slug": "sdk-retries",
+    "parentSlug": "sdk-errors",
+    "title": "Retries",
+    "seoTitle": "SDK Retry Behavior — Talonic Docs",
+    "description": "Automatic retry behavior for the Talonic Node SDK: exponential backoff with jitter on transient errors and rate limits.",
+    "content": [
+      { "type": "paragraph", "text": "The SDK retries automatically on `429` (respecting `X-RateLimit-Reset`), `500`, `502`, `503`, `504`, network errors, and timeouts. Backoff is exponential with jitter, capped at 16 seconds." },
+      { "type": "paragraph", "text": "The API may set `retryable: false` on a specific error; the SDK respects that and does not retry." },
+      { "type": "paragraph", "text": "Configure the maximum number of retries via the `maxRetries` constructor option (default: `3`)." }
+    ],
+    "related": [
+      { "label": "Configuration", "slug": "sdk-configuration" },
+      { "label": "Error Classes", "slug": "sdk-error-classes" },
+      { "label": "Rate Limits", "slug": "rate-limits" }
+    ],
+    "faq": [
+      { "question": "Does the SDK retry failed requests?", "answer": "Yes. Automatic retries on 429, 500, 502, 503, 504, network errors, and timeouts with exponential backoff capped at 16s. Configure via maxRetries (default: 3)." }
+    ],
+    "mentions": ["retries", "exponential backoff", "rate limit", "429"]
+  }
+]
