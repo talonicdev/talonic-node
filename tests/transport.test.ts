@@ -79,6 +79,54 @@ describe("Transport: successful requests", () => {
     expect(result.rateLimit.resetAt.getTime()).toBe(1726358400 * 1000)
   })
 
+  it("parses ISO 8601 rate-limit reset header", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse(
+        { ok: true },
+        {
+          headers: {
+            "x-ratelimit-limit": "2000",
+            "x-ratelimit-remaining": "1847",
+            "x-ratelimit-reset": "2026-05-04T00:00:00Z",
+          },
+        },
+      ),
+    )
+    const t = new Transport({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+    const result = await t.request({ method: "GET", path: "/v1/foo" })
+    expect(result.rateLimit.resetAt).toBeInstanceOf(Date)
+    expect(result.rateLimit.resetAt.toISOString()).toBe("2026-05-04T00:00:00.000Z")
+  })
+
+  it("attaches rateLimit to response data object", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse(
+        { id: "doc_1", status: "complete" },
+        {
+          headers: {
+            "x-ratelimit-limit": "2000",
+            "x-ratelimit-remaining": "1999",
+            "x-ratelimit-reset": "2026-05-04T00:00:00Z",
+          },
+        },
+      ),
+    )
+    const t = new Transport({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+    const result = await t.request({ method: "GET", path: "/v1/foo" })
+    expect(result.data.rateLimit).toBeDefined()
+    expect(result.data.rateLimit.limit).toBe(2000)
+    expect(result.data.rateLimit.remaining).toBe(1999)
+    expect(result.data.rateLimit.resetAt).toBeInstanceOf(Date)
+  })
+
   it("captures the request id from x-request-id", async () => {
     const fetchFn = vi
       .fn()
@@ -258,7 +306,7 @@ describe("Transport: retry behavior", () => {
     const result = await promise
 
     expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(result.data).toEqual({ ok: true })
+    expect(result.data).toMatchObject({ ok: true })
   })
 
   it("does not retry on 400", async () => {
@@ -307,7 +355,7 @@ describe("Transport: retry behavior", () => {
     const result = await promise
 
     expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(result.data).toEqual({ ok: true })
+    expect(result.data).toMatchObject({ ok: true })
   })
 
   it("throws after exhausting retries", async () => {

@@ -1,4 +1,5 @@
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
@@ -103,7 +104,7 @@ export class Jobs {
   }
 
   /** Create and run an extraction job. */
-  async create(params: CreateJobParams): Promise<Job> {
+  async create(params: CreateJobParams): Promise<WithRateLimit<Job>> {
     const result = await this.#transport.request<Job>({
       method: "POST",
       path: "/v1/jobs",
@@ -113,7 +114,7 @@ export class Jobs {
   }
 
   /** List jobs with optional filtering. */
-  async list(params?: ListJobsParams): Promise<JobList> {
+  async list(params?: ListJobsParams): Promise<WithRateLimit<JobList>> {
     const result = await this.#transport.request<JobList>({
       method: "GET",
       path: "/v1/jobs",
@@ -123,7 +124,7 @@ export class Jobs {
   }
 
   /** Get job status, progress, and result summary. */
-  async get(id: string): Promise<Job> {
+  async get(id: string): Promise<WithRateLimit<Job>> {
     const result = await this.#transport.request<Job>({
       method: "GET",
       path: `/v1/jobs/${encodeURIComponent(id)}`,
@@ -132,7 +133,7 @@ export class Jobs {
   }
 
   /** Get the structured extraction results from a completed job. */
-  async getResults(id: string): Promise<JobResults> {
+  async getResults(id: string): Promise<WithRateLimit<JobResults>> {
     const result = await this.#transport.request<JobResults>({
       method: "GET",
       path: `/v1/jobs/${encodeURIComponent(id)}/results`,
@@ -141,7 +142,7 @@ export class Jobs {
   }
 
   /** Cancel a running job. Partial results are retained. */
-  async cancel(id: string): Promise<Job> {
+  async cancel(id: string): Promise<WithRateLimit<Job>> {
     const result = await this.#transport.request<Job>({
       method: "POST",
       path: `/v1/jobs/${encodeURIComponent(id)}/cancel`,

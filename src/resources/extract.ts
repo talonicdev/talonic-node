@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises"
 import { basename } from "node:path"
 import { TalonicError } from "../errors.js"
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 
 /**
  * Schema definition for extraction. Accepts any of the three formats
@@ -131,15 +132,38 @@ export interface ExtractResult {
 export async function performExtract(
   transport: Transport,
   params: ExtractParams,
-): Promise<ExtractResult> {
+): Promise<WithRateLimit<ExtractResult>> {
   validateExtractParams(params)
-  const formData = await buildExtractFormData(params)
+  const resolved = { ...params, schema: autoPopulateRequired(params.schema) }
+  const formData = await buildExtractFormData(resolved)
   const result = await transport.request<ExtractResult>({
     method: "POST",
     path: "/v1/extract",
     body: formData,
   })
   return result.data
+}
+
+/**
+ * If the schema looks like a JSON Schema object with `properties` but no
+ * `required` array, auto-populate `required` with all property keys.
+ * This prevents the silent-empty-data footgun where the API returns null
+ * + confidence 0 for every field the caller clearly intended to extract.
+ *
+ * @internal
+ */
+function autoPopulateRequired(
+  schema: SchemaDefinition | string | undefined,
+): SchemaDefinition | string | undefined {
+  if (schema === undefined || typeof schema === "string") return schema
+  if (
+    schema["properties"] &&
+    typeof schema["properties"] === "object" &&
+    !schema["required"]
+  ) {
+    return { ...schema, required: Object.keys(schema["properties"] as Record<string, unknown>) }
+  }
+  return schema
 }
 
 function validateExtractParams(params: ExtractParams): void {

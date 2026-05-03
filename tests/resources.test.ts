@@ -66,6 +66,53 @@ describe("Talonic.extract", () => {
     expect(fd.get("document_id")).toBe("doc_abc")
   })
 
+  it("auto-populates required when schema has properties but no required", async () => {
+    await client.talonic.extract({
+      document_id: "doc_abc",
+      schema: {
+        type: "object",
+        properties: {
+          vendor_name: { type: "string" },
+          total: { type: "number" },
+        },
+      },
+    })
+    const fd = lastCall(client.fetchFn)[1].body as FormData
+    const sent = JSON.parse(fd.get("schema") as string) as {
+      required: string[]
+      properties: object
+    }
+    expect(sent.required).toEqual(["vendor_name", "total"])
+    expect(sent.properties).toBeDefined()
+  })
+
+  it("does not overwrite existing required array", async () => {
+    await client.talonic.extract({
+      document_id: "doc_abc",
+      schema: {
+        type: "object",
+        properties: {
+          vendor_name: { type: "string" },
+          total: { type: "number" },
+        },
+        required: ["vendor_name"],
+      },
+    })
+    const fd = lastCall(client.fetchFn)[1].body as FormData
+    const sent = JSON.parse(fd.get("schema") as string) as { required: string[] }
+    expect(sent.required).toEqual(["vendor_name"])
+  })
+
+  it("skips required auto-population for non-JSON-Schema objects", async () => {
+    await client.talonic.extract({
+      document_id: "doc_abc",
+      schema: { vendor_name: "string", total: "number" },
+    })
+    const fd = lastCall(client.fetchFn)[1].body as FormData
+    const sent = JSON.parse(fd.get("schema") as string) as Record<string, unknown>
+    expect(sent["required"]).toBeUndefined()
+  })
+
   it("forwards instructions, options, and include_markdown", async () => {
     await client.talonic.extract({
       document_id: "doc_abc",

@@ -1,5 +1,6 @@
 import { TalonicError } from "../errors.js"
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
@@ -219,7 +220,7 @@ export class Documents {
   }
 
   /** List all documents with filtering and pagination. */
-  async list(params?: ListDocumentsParams): Promise<DocumentList> {
+  async list(params?: ListDocumentsParams): Promise<WithRateLimit<DocumentList>> {
     const result = await this.#transport.request<DocumentList>({
       method: "GET",
       path: "/v1/documents",
@@ -229,7 +230,7 @@ export class Documents {
   }
 
   /** Retrieve a single document with full metadata. */
-  async get(id: string): Promise<Document> {
+  async get(id: string): Promise<WithRateLimit<Document>> {
     const result = await this.#transport.request<Document>({
       method: "GET",
       path: `/v1/documents/${encodeURIComponent(id)}`,
@@ -238,7 +239,7 @@ export class Documents {
   }
 
   /** Get the OCR-converted markdown of a document. */
-  async getMarkdown(id: string): Promise<DocumentMarkdown> {
+  async getMarkdown(id: string): Promise<WithRateLimit<DocumentMarkdown>> {
     const result = await this.#transport.request<DocumentMarkdown>({
       method: "GET",
       path: `/v1/documents/${encodeURIComponent(id)}/markdown`,
@@ -247,7 +248,7 @@ export class Documents {
   }
 
   /** Re-run extraction on an existing document. */
-  async reExtract(id: string): Promise<ReExtractResult> {
+  async reExtract(id: string): Promise<WithRateLimit<ReExtractResult>> {
     const result = await this.#transport.request<ReExtractResult>({
       method: "POST",
       path: `/v1/documents/${encodeURIComponent(id)}/re-extract`,
@@ -259,7 +260,7 @@ export class Documents {
    * Delete a document and all associated extractions. This action is
    * irreversible.
    */
-  async delete(id: string): Promise<{ deleted: boolean }> {
+  async delete(id: string): Promise<WithRateLimit<{ deleted: boolean }>> {
     const result = await this.#transport.request<{ deleted: boolean }>({
       method: "DELETE",
       path: `/v1/documents/${encodeURIComponent(id)}`,
@@ -288,7 +289,7 @@ export class Documents {
    * })
    * ```
    */
-  async filter(params: FilterDocumentsParams): Promise<FilterDocumentsResult> {
+  async filter(params: FilterDocumentsParams): Promise<WithRateLimit<FilterDocumentsResult>> {
     const conditions = params.conditions.map((c) => this.#shapeCondition(c))
 
     let sort: { fieldId: string; direction: "asc" | "desc" } | undefined

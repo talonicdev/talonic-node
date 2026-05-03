@@ -6,7 +6,7 @@ import { Jobs } from "./resources/jobs.js"
 import { Schemas } from "./resources/schemas.js"
 import type { SearchOptions, SearchResult } from "./resources/search.js"
 import { Transport } from "./transport.js"
-import type { TalonicConfig } from "./types.js"
+import type { TalonicConfig, WithRateLimit } from "./types.js"
 
 /**
  * The Talonic client. Entry point to every Talonic API operation.
@@ -80,7 +80,7 @@ export class Talonic {
    * })
    * ```
    */
-  async extract(params: ExtractParams): Promise<ExtractResult> {
+  async extract(params: ExtractParams): Promise<WithRateLimit<ExtractResult>> {
     return performExtract(this.#transport, params)
   }
 
@@ -93,7 +93,7 @@ export class Talonic {
    * console.log(result.documents)
    * ```
    */
-  async search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
+  async search(query: string, options: SearchOptions = {}): Promise<WithRateLimit<SearchResult>> {
     const result = await this.#transport.request<SearchResult>({
       method: "GET",
       path: "/v1/search",

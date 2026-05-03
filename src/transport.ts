@@ -42,8 +42,8 @@ interface ResolvedConfig {
  * @internal
  */
 export interface RequestResult<T> {
-  /** Parsed response body. */
-  data: T
+  /** Parsed response body, with rate-limit metadata attached. */
+  data: T & { rateLimit: RateLimitInfo }
   /** Rate-limit headers from the response. */
   rateLimit: RateLimitInfo
   /** Server-assigned request ID, if present. */
@@ -166,8 +166,13 @@ export class Transport {
       throw errorFromResponse({ status: response.status, body: responseBody, rateLimit })
     }
 
+    const data = responseBody as T & { rateLimit?: RateLimitInfo }
+    if (typeof data === "object" && data !== null) {
+      data.rateLimit = rateLimit
+    }
+
     return {
-      data: responseBody as T,
+      data: data as T & { rateLimit: RateLimitInfo },
       rateLimit,
       requestId,
       status: response.status,
@@ -238,12 +243,18 @@ async function readResponseBody(response: Response): Promise<unknown> {
 function parseRateLimit(headers: Headers): RateLimitInfo {
   const limit = parseIntHeader(headers.get("x-ratelimit-limit"), 0)
   const remaining = parseIntHeader(headers.get("x-ratelimit-remaining"), 0)
-  const resetUnix = parseIntHeader(headers.get("x-ratelimit-reset"), 0)
-  return {
-    limit,
-    remaining,
-    resetAt: new Date(resetUnix * 1000),
+  const resetAt = parseResetHeader(headers.get("x-ratelimit-reset"))
+  return { limit, remaining, resetAt }
+}
+
+function parseResetHeader(value: string | null): Date {
+  if (value === null) return new Date(0)
+  const asInt = Number.parseInt(value, 10)
+  if (String(asInt) === value && Number.isFinite(asInt)) {
+    return new Date(asInt * 1000)
   }
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed
 }
 
 function parseIntHeader(value: string | null, fallback: number): number {

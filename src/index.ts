@@ -33,7 +33,7 @@ export {
   TalonicValidationError,
 } from "./errors.js"
 
-export type { RateLimitInfo, TalonicConfig } from "./types.js"
+export type { RateLimitInfo, TalonicConfig, WithRateLimit } from "./types.js"
 
 export type {
   ExtractOptions,

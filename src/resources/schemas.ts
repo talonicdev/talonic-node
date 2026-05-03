@@ -1,4 +1,5 @@
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
@@ -86,7 +87,7 @@ export class Schemas {
   }
 
   /** List all saved schemas. */
-  async list(): Promise<SchemaList> {
+  async list(): Promise<WithRateLimit<SchemaList>> {
     const result = await this.#transport.request<SchemaList>({
       method: "GET",
       path: "/v1/schemas",
@@ -95,7 +96,7 @@ export class Schemas {
   }
 
   /** Get a schema by ID, including its full definition. */
-  async get(id: string): Promise<Schema> {
+  async get(id: string): Promise<WithRateLimit<Schema>> {
     const result = await this.#transport.request<Schema>({
       method: "GET",
       path: `/v1/schemas/${encodeURIComponent(id)}`,
@@ -104,7 +105,7 @@ export class Schemas {
   }
 
   /** Create a new schema. */
-  async create(params: CreateSchemaParams): Promise<Schema> {
+  async create(params: CreateSchemaParams): Promise<WithRateLimit<Schema>> {
     const result = await this.#transport.request<Schema>({
       method: "POST",
       path: "/v1/schemas",
@@ -114,7 +115,7 @@ export class Schemas {
   }
 
   /** Replace a schema definition. */
-  async update(id: string, params: UpdateSchemaParams): Promise<Schema> {
+  async update(id: string, params: UpdateSchemaParams): Promise<WithRateLimit<Schema>> {
     const result = await this.#transport.request<Schema>({
       method: "PUT",
       path: `/v1/schemas/${encodeURIComponent(id)}`,
@@ -124,7 +125,7 @@ export class Schemas {
   }
 
   /** Delete a schema. Existing extractions are retained. */
-  async delete(id: string): Promise<{ deleted: boolean }> {
+  async delete(id: string): Promise<WithRateLimit<{ deleted: boolean }>> {
     const result = await this.#transport.request<{ deleted: boolean }>({
       method: "DELETE",
       path: `/v1/schemas/${encodeURIComponent(id)}`,

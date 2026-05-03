@@ -54,6 +54,15 @@ export interface RateLimitInfo {
 }
 
 /**
+ * Extends a response type `T` with rate-limit metadata parsed from
+ * the `X-RateLimit-*` response headers. Every SDK method returns
+ * `WithRateLimit<T>`, so `result.rateLimit` is always available.
+ *
+ * @public
+ */
+export type WithRateLimit<T> = T & { rateLimit: RateLimitInfo }
+
+/**
  * Internal request options consumed by the transport layer.
  *
  * Not part of the public SDK surface.

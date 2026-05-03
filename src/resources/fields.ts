@@ -1,4 +1,5 @@
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
@@ -85,7 +86,7 @@ export class Fields {
    * }
    * ```
    */
-  async list(params: ListFieldsParams = {}): Promise<FieldList> {
+  async list(params: ListFieldsParams = {}): Promise<WithRateLimit<FieldList>> {
     const result = await this.#transport.request<FieldList>({
       method: "GET",
       path: "/v1/fields",
@@ -102,7 +103,7 @@ export class Fields {
   }
 
   /** Get a single field by id, including occurrence history and metadata. */
-  async get(id: string): Promise<Field> {
+  async get(id: string): Promise<WithRateLimit<Field>> {
     const result = await this.#transport.request<Field>({
       method: "GET",
       path: `/v1/fields/${encodeURIComponent(id)}`,
@@ -111,7 +112,7 @@ export class Fields {
   }
 
   /** Find semantically similar fields by embedding distance. */
-  async similar(id: string): Promise<{ data: Array<Field & { similarity?: number }> }> {
+  async similar(id: string): Promise<WithRateLimit<{ data: Array<Field & { similarity?: number }> }>> {
     const result = await this.#transport.request<{
       data: Array<Field & { similarity?: number }>
     }>({

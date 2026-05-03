@@ -1,4 +1,5 @@
 import type { Transport } from "../transport.js"
+import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
@@ -108,7 +109,7 @@ export class Extractions {
   }
 
   /** List extractions with optional filters. */
-  async list(params?: ListExtractionsParams): Promise<ExtractionList> {
+  async list(params?: ListExtractionsParams): Promise<WithRateLimit<ExtractionList>> {
     const result = await this.#transport.request<ExtractionList>({
       method: "GET",
       path: "/v1/extractions",
@@ -118,7 +119,7 @@ export class Extractions {
   }
 
   /** Get the full extraction result including data, confidence, and metadata. */
-  async get(id: string): Promise<Extraction> {
+  async get(id: string): Promise<WithRateLimit<Extraction>> {
     const result = await this.#transport.request<Extraction>({
       method: "GET",
       path: `/v1/extractions/${encodeURIComponent(id)}`,
@@ -130,12 +131,12 @@ export class Extractions {
    * Get just the extracted data, without metadata. Returns parsed JSON
    * by default, or a CSV string when `{ format: "csv" }` is passed.
    */
-  async getData(id: string, options?: { format?: "json" }): Promise<Record<string, unknown>>
+  async getData(id: string, options?: { format?: "json" }): Promise<WithRateLimit<Record<string, unknown>>>
   async getData(id: string, options: { format: "csv" }): Promise<string>
   async getData(
     id: string,
     options?: { format?: "json" | "csv" },
-  ): Promise<Record<string, unknown> | string> {
+  ): Promise<WithRateLimit<Record<string, unknown>> | string> {
     const result = await this.#transport.request<Record<string, unknown> | string>({
       method: "GET",
       path: `/v1/extractions/${encodeURIComponent(id)}/data`,
@@ -148,7 +149,7 @@ export class Extractions {
    * Submit corrections for specific fields in an extraction. Corrections
    * are logged and can be propagated to similar extractions.
    */
-  async patch(id: string, params: PatchExtractionParams): Promise<PatchExtractionResult> {
+  async patch(id: string, params: PatchExtractionParams): Promise<WithRateLimit<PatchExtractionResult>> {
     const result = await this.#transport.request<PatchExtractionResult>({
       method: "PATCH",
       path: `/v1/extractions/${encodeURIComponent(id)}/data`,
