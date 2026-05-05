@@ -4,7 +4,7 @@ Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-vali
 
 > **Status:** Core surface stable. Live `extract` is verified end-to-end against production. `documents.filter()` now passes canonical field names directly to the API for server-side resolution; remaining edge cases are tracked in [Known issues](#known-issues).
 
-> **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly.
+> **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it locally into Claude Desktop, Cursor, Cline, Continue, or Cowork via `npx -y @talonic/mcp@latest`, or use the hosted endpoint at `https://mcp.talonic.com/mcp` from Claude.ai's "Add custom connector" flow. Either way, any MCP-aware agent can extract documents directly.
 
 ## Install
 
@@ -33,16 +33,28 @@ const talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })
 const result = await talonic.extract({
   file_path: "./invoice.pdf",
   schema: {
-    vendor_name: "string",
-    invoice_number: "string",
-    total_amount: "number",
-    due_date: "date",
+    type: "object",
+    properties: {
+      vendor_name: { type: "string", title: "Vendor Name" },
+      invoice_number: { type: "string", title: "Invoice Number" },
+      total_amount: { type: "number", title: "Total Amount" },
+      due_date: { type: "string", title: "Due Date", format: "date" },
+    },
+    required: ["vendor_name", "total_amount"],
   },
 })
 
 console.log(result.data)
 // { vendor_name: "Acme Corp", invoice_number: "INV-2024-0847", total_amount: 14250, due_date: "2024-03-15" }
+
+console.log(result.confidence.overall)
+// 0.97   — overall extraction confidence (0..1)
+
+console.log(result.rateLimit)
+// { limit, remaining, resetAt }   — parsed from X-RateLimit-* headers
 ```
+
+Pass full JSON Schema with `type: "object"` and `properties` for reliable results. The SDK auto-populates `required` from `properties` when omitted, so you cannot accidentally end up with the silent-empty-data footgun where the API returns `null` for fields you intended to extract. Pass `include_provenance: true` to also receive per-field source evidence (page, section, source text).
 
 ## API surface
 
@@ -87,7 +99,7 @@ The package ships with a `talonic` binary:
 talonic schemas list
 talonic documents list --per-page=20
 talonic extract ./invoice.pdf \
-  --schema='{"vendor_name":"string","total_amount":"number"}'
+  --schema='{"type":"object","properties":{"vendor_name":{"type":"string"},"total_amount":{"type":"number"}},"required":["vendor_name","total_amount"]}'
 talonic --help
 ```
 
@@ -104,6 +116,19 @@ const talonic = new Talonic({
 ```
 
 The SDK retries automatically on `429` (respecting `X-RateLimit-Reset`), `500`, `502`, `503`, `504`, network errors, and timeouts. Backoff is exponential with jitter, capped at 16s. The API may set `retryable: false` on a specific error; the SDK respects that and does not retry.
+
+## Rate limits
+
+Every successful response is wrapped in `WithRateLimit<T>` and includes a `rateLimit` block parsed from the `X-RateLimit-*` response headers:
+
+```ts
+const result = await talonic.schemas.list()
+
+result.data         // SchemaList
+result.rateLimit    // { limit, remaining, resetAt }
+```
+
+> **Caveat (v0.1.7):** the rate-limit values currently come back as sentinel zeros (`{limit: 0, remaining: 0, resetAt: 1970-01-01T00:00:00.000Z}`) because either the API is not emitting `X-RateLimit-*` headers or the transport layer is not parsing them. The wrapper exists, the values are not yet meaningful. Tracked for a fix.
 
 ## Errors
 
@@ -134,8 +159,8 @@ try {
 
 ## Known issues
 
-- **Auto-discovery extract (no schema) currently returns 500 on production.** Always provide a `schema` or `schema_id` in v0.1.
-- **Schema definitions: prefer full JSON Schema for now.** The flat key-type map (`{ vendor_name: "string", ... }`) is documented as supported and the API's own error message lists it as accepted, but as of writing the server-side normaliser does not actually translate it. Until that ships, send full JSON Schema:
+- **Schema is required on `extract`.** Schema-less extraction is unreliable in v0.1. Always provide a `schema` (full JSON Schema recommended) or a `schema_id`. The MCP wrapper at `@talonic/mcp` rejects schema-less calls at the layer above; the SDK passes through but you will hit unreliable behaviour.
+- **Schema definitions: prefer full JSON Schema.** The flat key-type map (`{ vendor_name: "string", ... }`) is documented as supported and the API's own error message lists it as accepted, but as of writing the server-side normaliser does not always translate it. If a flat-map save returns a "no fields" error, fall back to:
   ```ts
   schema: {
     type: "object",
@@ -146,7 +171,11 @@ try {
     required: ["vendor_name", "total_amount"],
   }
   ```
-- **`is_not_empty` filter currently underreports.** A filter condition with `operator: "is_not_empty"` may return zero documents even when the field has populated values in the workspace. The other operators (`eq`, `gt`, `gte`, `lt`, `lte`, `contains`, `between`, `is_empty`) work as expected. Tracked separately.
+- **Filter requires `filterable: true` fields.** Call `talonic.search(...)` first; only entries in the response where `filterable: true` can be used as `field` (or `fieldId`) on `talonic.documents.filter(...)`. Entries with `filterable: false` exist in the schema but have no extracted data yet.
+- **Schema field type affects filter operators.** Numeric operators (`gt`, `gte`, `lt`, `lte`, `between`) only work on fields typed as `number` in the schema. Numeric values stored as strings (with currency symbols, locale formatting, etc.) silently return zero results. Type your schema fields appropriately at design time.
+- **`is_not_empty` filter currently underreports.** A filter condition with `operator: "is_not_empty"` may return zero documents even when the field has populated values in the workspace. The other operators (`eq`, `gt`, `gte`, `lt`, `lte`, `contains`, `between`, `is_empty`) work as expected.
+- **Rate-limit values come back as sentinel zeros.** See the [Rate limits](#rate-limits) section. The `WithRateLimit<T>` wrapper is in place; the values are not yet meaningful.
+- **Cost, EUR price, and remaining balance are not surfaced** in API responses. Credit balance must be checked in the Talonic dashboard.
 
 ## Development
 

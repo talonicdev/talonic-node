@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-05-02
+
+### Added
+
+- **`WithRateLimit<T>` wrapper on every resource method.** Every successful response now includes a `rateLimit` block (`{ limit, remaining, resetAt }`) parsed from the `X-RateLimit-*` response headers. `talonic.extract()`, `talonic.documents.list()`, `talonic.schemas.list()`, etc. all return `WithRateLimit<T>` instead of `T`.
+- **`autoPopulateRequired` guardrail in `extract()`.** When you pass a JSON Schema with `properties` but no `required` array, the SDK auto-fills `required` with the property keys before sending. Prevents the silent-empty-data footgun where the API returns `null` and confidence 0 for fields that were not explicitly required.
+- New `TalonicRateLimitError` class with a typed `rateLimit` field for use after retries are exhausted on 429.
+
+### Known issues
+
+- The `rateLimit` values currently come back as sentinel zeros (`{limit: 0, remaining: 0, resetAt: 1970-01-01T00:00:00.000Z}`). Either the API is not emitting `X-RateLimit-*` headers or the transport layer is not parsing them. The wrapper is shipped; the values are not yet meaningful. Tracked for a fix.
+
+## [0.1.6] - 2026-05-02
+
+### Changed
+
+- `src/version.ts` derives the version from `package.json` at build time instead of being hardcoded. The status line in the README no longer carries a pinned version number.
+
+### Fixed
+
+- Platform docs sync workflow: the dispatch step now uses the correct version output.
+
+## [0.1.5] - 2026-05-02
+
+### Added
+
+- `docs/sections.json` and a platform docs sync pipeline. Every change in `src/content/sections/` flows automatically into the website at publish time, becoming SEO-friendly doc pages.
+
+### Fixed
+
+- Strict null-check warning in `src/content/helpers.ts`.
+
+## [0.1.4] - 2026-05-01
+
+### Added
+
+- **`/content` export** from `package.json`. The SDK now ships a structured docs payload (`overview`, `cli`, `configuration`, `errors`, `known-issues`, `api-surface`) consumable by the website's docs build. Docs in code, single source of truth.
+- Publish workflow that triggers `update-docs.yml` on the website repo on every npm release, so the website's `package-lock.json` stays in sync with whatever's on npm.
+
 ## [0.1.3] - 2026-04-30
 
 ### Changed
