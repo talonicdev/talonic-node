@@ -10,6 +10,10 @@ export const sections: RawSection[] = [
       "Configure the Talonic client with API key, base URL, timeout, retries, and custom fetch.",
     content: [
       {
+        type: "paragraph",
+        text: "Create a `Talonic` instance by passing a configuration object to the constructor. The only required field is `apiKey`; all other options have sensible defaults. The client validates the key format on construction and throws a `TypeError` if it is missing or empty.",
+      },
+      {
         type: "code",
         language: "typescript",
         title: "All options",
@@ -20,6 +24,18 @@ export const sections: RawSection[] = [
   maxRetries: 3,                         // 429, 500, 502, 503, 504, network, timeout
   fetch: customFetch,                    // optional override (e.g. for testing)
 })`,
+      },
+      {
+        type: "paragraph",
+        text: "The `fetch` option lets you inject a custom implementation for testing or proxying. In production on Node.js 18+, the SDK uses the built-in `globalThis.fetch` automatically. If no fetch implementation is available (Node < 18 without a polyfill), the constructor throws a `TypeError` with a clear message.",
+      },
+      {
+        type: "paragraph",
+        text: "Adjust `timeout` for long-running extractions on large documents; the default of 60 seconds covers most cases. Set `maxRetries` to `0` to disable automatic retries entirely, which is useful during development when you want to see errors immediately.",
+      },
+      {
+        type: "callout",
+        text: "API keys use the `tlnc_` prefix. Store them in environment variables or a secrets manager rather than hard-coding them in source files.",
       },
       {
         type: "param-table",
@@ -66,6 +82,16 @@ export const sections: RawSection[] = [
         answer:
           "Pass an options object to new Talonic() with apiKey (required), and optional baseUrl, timeout, maxRetries, and fetch.",
       },
+      {
+        question: "Can I disable automatic retries?",
+        answer:
+          "Yes. Set maxRetries to 0 in the constructor options. The SDK will throw on the first failure without retrying.",
+      },
+      {
+        question: "What happens if no fetch implementation is available?",
+        answer:
+          "The constructor throws a TypeError with the message 'no fetch implementation available'. On Node.js 18+ the built-in fetch is used automatically; on older versions, pass a polyfill via the fetch option.",
+      },
     ],
     mentions: ["configuration", "apiKey", "timeout", "maxRetries"],
   },
@@ -86,6 +112,14 @@ export const sections: RawSection[] = [
         text: "The API may set `retryable: false` on a specific error; the SDK respects that and does not retry.",
       },
       {
+        type: "paragraph",
+        text: "The backoff schedule starts at 1 second for the first retry, doubling on each subsequent attempt (1s, 2s, 4s, ...) up to a maximum of 16 seconds. A random jitter of up to 250ms is added to each wait to prevent thundering-herd problems when multiple clients retry simultaneously.",
+      },
+      {
+        type: "paragraph",
+        text: "For `429` rate-limit responses specifically, the SDK reads the `X-RateLimit-Reset` header and waits until the reset timestamp (plus a 100ms buffer) rather than using exponential backoff. If the reset window exceeds 60 seconds, the SDK falls back to standard backoff instead of blocking indefinitely.",
+      },
+      {
         type: "callout",
         text: "Rate limit retries respect the `X-RateLimit-Reset` header from the API, so the SDK waits the exact right amount of time before retrying a 429.",
       },
@@ -99,6 +133,16 @@ export const sections: RawSection[] = [
         question: "Does the Talonic SDK retry failed requests?",
         answer:
           "Yes. It retries on 429, 500, 502, 503, 504, network errors, and timeouts with exponential backoff and jitter, up to maxRetries attempts.",
+      },
+      {
+        question: "What is the maximum backoff time between retries?",
+        answer:
+          "The exponential backoff caps at 16 seconds. For 429 rate-limit errors, the SDK instead waits until the server-provided reset timestamp, up to a maximum of 60 seconds.",
+      },
+      {
+        question: "Can the API override the SDK's retry behavior?",
+        answer:
+          "Yes. If the API returns retryable: false on an error response, the SDK will not retry that request regardless of the status code or maxRetries setting.",
       },
     ],
     mentions: ["retry", "backoff", "rate limit", "429"],
