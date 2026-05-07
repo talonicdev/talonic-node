@@ -4,6 +4,45 @@ import type { WithRateLimit } from "../types.js"
 import type { Pagination } from "./pagination.js"
 
 /**
+ * Triage signals attached to a document by the Talonic classification
+ * pipeline. The API returns this object on document fetches when triage
+ * has been computed, or `null` when the document has not yet been
+ * triaged. Any individual field may be `null` until the relevant tier
+ * of classification has completed.
+ *
+ * Shape mirrors the API response, which derives from the
+ * `document_triage` table.
+ *
+ * @public
+ */
+export interface DocumentTriage {
+  /**
+   * Sensitivity tier. `null` until classification has run.
+   */
+  sensitivity?: "public" | "internal" | "restricted" | null
+  /** Functional department the document belongs to (e.g. "finance"). */
+  department?: string | null
+  /** ISO 3166-1 alpha-2 country code of the document's jurisdiction. */
+  jurisdiction?: string | null
+  /**
+   * `true` when classification has run and at least one PII category was
+   * detected. Derived from `pii_categories.length > 0`.
+   */
+  pii_detected?: boolean
+  /**
+   * Detected PII categories. `null` until tier-3 classification runs.
+   */
+  pii_categories?: string[] | null
+  /** `true` when the document is likely to contain regulated data. */
+  regulated_data?: boolean
+  /**
+   * Confidentiality marking text extracted from the document, e.g.
+   * "Confidential", "Internal Use Only".
+   */
+  confidentiality_marking?: string | null
+}
+
+/**
  * A document uploaded to Talonic.
  *
  * Mirrors the production API response shape. Many fields are optional
@@ -19,7 +58,11 @@ export interface Document {
   status: string
   pages?: number
   size_bytes?: number
-  mime_type?: string
+  /**
+   * MIME type detected when the document was ingested. `null` when the
+   * column is empty for legacy rows.
+   */
+  mime_type?: string | null
   /** Detected document type (e.g. "Certificate of Insurance"). */
   type_detected?: string
   /** Detected language code (e.g. "en"). */
@@ -28,7 +71,12 @@ export interface Document {
     id: string
     type?: string
   }
-  triage?: Record<string, unknown>
+  /**
+   * Triage classification output. `null` when the document has not been
+   * triaged yet (most relevant for newly ingested documents). See
+   * {@link DocumentTriage} for the per-field shape.
+   */
+  triage?: DocumentTriage | null
   original_path?: string | null
   extraction_count?: number
   latest_extraction_id?: string

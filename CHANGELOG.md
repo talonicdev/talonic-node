@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`DocumentTriage` interface and tightened `Document.triage` typing.** The `triage` field on `Document` was previously typed as `Record<string, unknown>`, which compiled but gave callers no help. It is now `DocumentTriage | null` with named fields (`sensitivity`, `department`, `jurisdiction`, `pii_detected`, `pii_categories`, `regulated_data`, `confidentiality_marking`) and per-field nullability that mirrors the API response. `null` indicates the document has not been classified yet. `Document.mime_type` is now `string | null` to reflect the nullable database column.
+
 ### Changed
 
 - **`WithRateLimit<T>.rateLimit` is now nullable.** When the response carries no `X-RateLimit-*` headers (e.g. enterprise / unlimited tier, or any path that does not run through the rate-limit interceptor), the SDK returns `rateLimit: null` instead of a sentinel `{limit: 0, remaining: 0, resetAt: 1970-01-01}` object. Breaking change at the type level: consumers reading `result.rateLimit.limit` will get a TypeScript error and need to handle the null case explicitly. The previous sentinel silently conflated "no limit configured" with "limit hit" with "headers missing"; treating the absence as a real value was a footgun this fix removes. `TalonicRateLimitError.rateLimit` stays non-null since a 429 always carries headers in practice; if any do not, the error class falls back to the sentinel internally so consumers reading `err.rateLimit.resetAt` are not affected.
