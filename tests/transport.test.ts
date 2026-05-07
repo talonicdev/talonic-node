@@ -122,9 +122,54 @@ describe("Transport: successful requests", () => {
     })
     const result = await t.request({ method: "GET", path: "/v1/foo" })
     expect(result.data.rateLimit).toBeDefined()
-    expect(result.data.rateLimit.limit).toBe(2000)
-    expect(result.data.rateLimit.remaining).toBe(1999)
-    expect(result.data.rateLimit.resetAt).toBeInstanceOf(Date)
+    expect(result.data.rateLimit?.limit).toBe(2000)
+    expect(result.data.rateLimit?.remaining).toBe(1999)
+    expect(result.data.rateLimit?.resetAt).toBeInstanceOf(Date)
+  })
+
+  it("parses X-Talonic-Cost-* headers into result.cost on extract responses", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      jsonResponse(
+        { extraction_id: "ext_1", status: "complete" },
+        {
+          headers: {
+            "x-talonic-cost-credits": "12",
+            "x-talonic-cost-eur": "0.06",
+            "x-talonic-balance-credits": "1888",
+            "x-talonic-cells-resolved-registry": "2",
+            "x-talonic-cells-resolved-ai": "10",
+          },
+        },
+      ),
+    )
+    const t = new Transport({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+    const result = await t.request({ method: "POST", path: "/v1/extract" })
+    expect(result.cost).not.toBeNull()
+    expect(result.cost?.costCredits).toBe(12)
+    expect(result.cost?.costEur).toBeCloseTo(0.06, 5)
+    expect(result.cost?.balanceCredits).toBe(1888)
+    expect(result.cost?.cellsResolvedRegistry).toBe(2)
+    expect(result.cost?.cellsResolvedAi).toBe(10)
+    expect(result.data.cost).not.toBeNull()
+    expect(result.data.cost?.costCredits).toBe(12)
+  })
+
+  it("returns null cost when no X-Talonic-Cost-* headers are present", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ id: "doc_1", status: "complete" }, { headers: {} }))
+    const t = new Transport({
+      apiKey: "k",
+      fetch: fetchFn as unknown as typeof fetch,
+      maxRetries: 0,
+    })
+    const result = await t.request({ method: "GET", path: "/v1/documents/doc_1" })
+    expect(result.cost).toBeNull()
+    expect(result.data.cost).toBeNull()
   })
 
   it("captures the request id from x-request-id", async () => {

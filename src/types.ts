@@ -54,8 +54,28 @@ export interface RateLimitInfo {
 }
 
 /**
- * Extends a response type `T` with rate-limit metadata parsed from the
- * `X-RateLimit-*` response headers.
+ * Per-call cost information parsed from the `X-Talonic-Cost-*` and
+ * `X-Talonic-Balance-*` response headers. Populated on extract calls;
+ * `null` on every other endpoint.
+ *
+ * @public
+ */
+export interface CostInfo {
+  /** Credits consumed by this call. */
+  costCredits: number
+  /** Approximate EUR cost of this call. */
+  costEur: number
+  /** Workspace credit balance after this call settled. */
+  balanceCredits: number
+  /** Cells resolved from the materialized field-registry (cheap path). */
+  cellsResolvedRegistry: number
+  /** Cells resolved by AI extraction (priced path). */
+  cellsResolvedAi: number
+}
+
+/**
+ * Extends a response type `T` with response-side metadata parsed from
+ * Talonic's `X-RateLimit-*` and `X-Talonic-*` headers.
  *
  * `rateLimit` is `null` when the response did not include any
  * `X-RateLimit-*` headers. This typically means the endpoint or
@@ -65,9 +85,18 @@ export interface RateLimitInfo {
  * not available for this response" rather than as "zero requests
  * remaining".
  *
+ * `cost` is `null` on every endpoint that is not extract; the API only
+ * sets `X-Talonic-Cost-*` headers on `/v1/extract` responses today. On
+ * extract responses, `cost.balanceCredits` is the post-call workspace
+ * balance, `cost.costCredits` / `cost.costEur` are the per-call charge,
+ * and the `cellsResolved*` fields explain the registry-vs-AI split.
+ *
  * @public
  */
-export type WithRateLimit<T> = T & { rateLimit: RateLimitInfo | null }
+export type WithRateLimit<T> = T & {
+  rateLimit: RateLimitInfo | null
+  cost: CostInfo | null
+}
 
 /**
  * Internal request options consumed by the transport layer.

@@ -565,3 +565,37 @@ describe("talonic.jobs", () => {
     expect(init.method).toBe("POST")
   })
 })
+
+describe("talonic.credits", () => {
+  it("getBalance -> GET /v1/credits/balance and returns the enriched balance", async () => {
+    const { talonic, fetchFn } = makeClient({
+      balance_credits: 1888,
+      balance_eur: 9.44,
+      burn_rate_30d_credits: 360,
+      projected_runway_days: 157,
+      tier: "pro",
+      tier_resets_at: "2026-06-01T00:00:00.000Z",
+    })
+    const balance = await talonic.credits.getBalance()
+    const [url, init] = lastCall(fetchFn)
+    expect(url).toContain("/v1/credits/balance")
+    expect(init.method).toBe("GET")
+    expect(balance.balance_credits).toBe(1888)
+    expect(balance.tier).toBe("pro")
+    expect(balance.projected_runway_days).toBe(157)
+    expect(balance.tier_resets_at).toBe("2026-06-01T00:00:00.000Z")
+  })
+
+  it("getBalance returns -1 runway sentinel when burn rate is zero", async () => {
+    const { talonic } = makeClient({
+      balance_credits: 50,
+      balance_eur: 0.25,
+      burn_rate_30d_credits: 0,
+      projected_runway_days: -1,
+      tier: "free",
+      tier_resets_at: "2026-06-01T00:00:00.000Z",
+    })
+    const balance = await talonic.credits.getBalance()
+    expect(balance.projected_runway_days).toBe(-1)
+  })
+})

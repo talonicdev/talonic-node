@@ -5,7 +5,7 @@ import {
   TalonicTimeoutError,
   errorFromResponse,
 } from "./errors.js"
-import type { RateLimitInfo, RequestOptions, TalonicConfig } from "./types.js"
+import type { CostInfo, RateLimitInfo, RequestOptions, TalonicConfig } from "./types.js"
 import { VERSION } from "./version.js"
 
 const DEFAULT_BASE_URL = "https://api.talonic.com"
@@ -43,16 +43,22 @@ interface ResolvedConfig {
  */
 export interface RequestResult<T> {
   /**
-   * Parsed response body, with rate-limit metadata attached. `rateLimit`
-   * is `null` when the response carried no `X-RateLimit-*` headers (see
+   * Parsed response body, with rate-limit and cost metadata attached.
+   * Both are `null` when the corresponding headers are absent (see
    * {@link WithRateLimit}).
    */
-  data: T & { rateLimit: RateLimitInfo | null }
+  data: T & { rateLimit: RateLimitInfo | null; cost: CostInfo | null }
   /**
    * Rate-limit headers from the response. `null` when the response had
    * no `X-RateLimit-*` headers (e.g. unlimited tier).
    */
   rateLimit: RateLimitInfo | null
+  /**
+   * Cost headers from the response. `null` for every endpoint that is
+   * not `/v1/extract`; the API only emits `X-Talonic-Cost-*` headers
+   * on extract responses today.
+   */
+  cost: CostInfo | null
   /** Server-assigned request ID, if present. */
   requestId?: string
   /** HTTP status code (always 2xx for successful results). */
@@ -166,6 +172,7 @@ export class Transport {
     }
 
     const rateLimit = parseRateLimit(response.headers)
+    const cost = parseCost(response.headers)
     const responseBody = await readResponseBody(response)
     const requestId = response.headers.get("x-request-id") ?? undefined
 
@@ -173,14 +180,19 @@ export class Transport {
       throw errorFromResponse({ status: response.status, body: responseBody, rateLimit })
     }
 
-    const data = responseBody as T & { rateLimit?: RateLimitInfo | null }
+    const data = responseBody as T & {
+      rateLimit?: RateLimitInfo | null
+      cost?: CostInfo | null
+    }
     if (typeof data === "object" && data !== null) {
       data.rateLimit = rateLimit
+      data.cost = cost
     }
 
     return {
-      data: data as T & { rateLimit: RateLimitInfo | null },
+      data: data as T & { rateLimit: RateLimitInfo | null; cost: CostInfo | null },
       rateLimit,
+      cost,
       requestId,
       status: response.status,
     }
@@ -245,6 +257,27 @@ async function readResponseBody(response: Response): Promise<unknown> {
   }
   const text = await response.text()
   return text.length > 0 ? text : undefined
+}
+
+function parseCost(headers: Headers): CostInfo | null {
+  // `X-Talonic-Cost-Credits` is the canonical signal: the API sets it on
+  // every extract response. If absent, treat the whole cost block as
+  // unavailable (most endpoints do not emit any X-Talonic-Cost-* headers).
+  const costCreditsHeader = headers.get("x-talonic-cost-credits")
+  if (costCreditsHeader === null) return null
+  return {
+    costCredits: parseIntHeader(costCreditsHeader, 0),
+    costEur: parseFloatHeader(headers.get("x-talonic-cost-eur"), 0),
+    balanceCredits: parseIntHeader(headers.get("x-talonic-balance-credits"), 0),
+    cellsResolvedRegistry: parseIntHeader(headers.get("x-talonic-cells-resolved-registry"), 0),
+    cellsResolvedAi: parseIntHeader(headers.get("x-talonic-cells-resolved-ai"), 0),
+  }
+}
+
+function parseFloatHeader(value: string | null, fallback: number): number {
+  if (value === null) return fallback
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : fallback
 }
 
 function parseRateLimit(headers: Headers): RateLimitInfo | null {

@@ -33,7 +33,7 @@ export {
   TalonicValidationError,
 } from "./errors.js"
 
-export type { RateLimitInfo, TalonicConfig, WithRateLimit } from "./types.js"
+export type { CostInfo, RateLimitInfo, TalonicConfig, WithRateLimit } from "./types.js"
 
 export type {
   ExtractOptions,
@@ -89,5 +89,8 @@ export type {
 
 export { Jobs } from "./resources/jobs.js"
 export type { CreateJobParams, Job, JobList, JobResults, ListJobsParams } from "./resources/jobs.js"
+
+export { Credits } from "./resources/credits.js"
+export type { EnhancedBalance } from "./resources/credits.js"
 
 export type { Pagination } from "./resources/pagination.js"

@@ -1,3 +1,4 @@
+import { Credits } from "./resources/credits.js"
 import { Documents } from "./resources/documents.js"
 import { type ExtractParams, type ExtractResult, performExtract } from "./resources/extract.js"
 import { Extractions } from "./resources/extractions.js"
@@ -51,6 +52,9 @@ export class Talonic {
   /** Fields resource. Autocomplete field names from the registry. */
   readonly fields: Fields
 
+  /** Credits resource. Read the workspace credit balance, burn rate, and runway. */
+  readonly credits: Credits
+
   constructor(config: TalonicConfig) {
     this.#transport = new Transport(config)
     this.fields = new Fields(this.#transport)
@@ -58,6 +62,7 @@ export class Talonic {
     this.extractions = new Extractions(this.#transport)
     this.schemas = new Schemas(this.#transport)
     this.jobs = new Jobs(this.#transport)
+    this.credits = new Credits(this.#transport)
   }
 
   /**

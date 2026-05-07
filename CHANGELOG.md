@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`CostInfo` and per-call cost on `WithRateLimit<T>`.** The Talonic API now sets `X-Talonic-Cost-Credits`, `X-Talonic-Cost-EUR`, `X-Talonic-Balance-Credits`, `X-Talonic-Cells-Resolved-Registry`, and `X-Talonic-Cells-Resolved-AI` on extract responses. The transport now parses these headers and exposes them as `result.cost: CostInfo | null`. `null` for every endpoint that is not extract.
+- **`Credits` resource and `talonic.credits.getBalance()`.** Calls `GET /v1/credits/balance` and returns the enriched balance (credits, EUR, 30-day burn rate, projected runway days, tier, next reset). New `EnhancedBalance` interface exported from the package.
 - **`DocumentTriage` interface and tightened `Document.triage` typing.** The `triage` field on `Document` was previously typed as `Record<string, unknown>`, which compiled but gave callers no help. It is now `DocumentTriage | null` with named fields (`sensitivity`, `department`, `jurisdiction`, `pii_detected`, `pii_categories`, `regulated_data`, `confidentiality_marking`) and per-field nullability that mirrors the API response. `null` indicates the document has not been classified yet. `Document.mime_type` is now `string | null` to reflect the nullable database column.
 
 ### Changed
