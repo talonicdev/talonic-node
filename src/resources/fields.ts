@@ -112,7 +112,9 @@ export class Fields {
   }
 
   /** Find semantically similar fields by embedding distance. */
-  async similar(id: string): Promise<WithRateLimit<{ data: Array<Field & { similarity?: number }> }>> {
+  async similar(
+    id: string,
+  ): Promise<WithRateLimit<{ data: Array<Field & { similarity?: number }> }>> {
     const result = await this.#transport.request<{
       data: Array<Field & { similarity?: number }>
     }>({

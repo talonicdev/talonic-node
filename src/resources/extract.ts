@@ -156,11 +156,7 @@ function autoPopulateRequired(
   schema: SchemaDefinition | string | undefined,
 ): SchemaDefinition | string | undefined {
   if (schema === undefined || typeof schema === "string") return schema
-  if (
-    schema["properties"] &&
-    typeof schema["properties"] === "object" &&
-    !schema["required"]
-  ) {
+  if (schema["properties"] && typeof schema["properties"] === "object" && !schema["required"]) {
     return { ...schema, required: Object.keys(schema["properties"] as Record<string, unknown>) }
   }
   return schema

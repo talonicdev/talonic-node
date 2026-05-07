@@ -131,7 +131,10 @@ export class Extractions {
    * Get just the extracted data, without metadata. Returns parsed JSON
    * by default, or a CSV string when `{ format: "csv" }` is passed.
    */
-  async getData(id: string, options?: { format?: "json" }): Promise<WithRateLimit<Record<string, unknown>>>
+  async getData(
+    id: string,
+    options?: { format?: "json" },
+  ): Promise<WithRateLimit<Record<string, unknown>>>
   async getData(id: string, options: { format: "csv" }): Promise<string>
   async getData(
     id: string,
@@ -149,7 +152,10 @@ export class Extractions {
    * Submit corrections for specific fields in an extraction. Corrections
    * are logged and can be propagated to similar extractions.
    */
-  async patch(id: string, params: PatchExtractionParams): Promise<WithRateLimit<PatchExtractionResult>> {
+  async patch(
+    id: string,
+    params: PatchExtractionParams,
+  ): Promise<WithRateLimit<PatchExtractionResult>> {
     const result = await this.#transport.request<PatchExtractionResult>({
       method: "PATCH",
       path: `/v1/extractions/${encodeURIComponent(id)}/data`,
