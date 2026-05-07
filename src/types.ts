@@ -54,13 +54,20 @@ export interface RateLimitInfo {
 }
 
 /**
- * Extends a response type `T` with rate-limit metadata parsed from
- * the `X-RateLimit-*` response headers. Every SDK method returns
- * `WithRateLimit<T>`, so `result.rateLimit` is always available.
+ * Extends a response type `T` with rate-limit metadata parsed from the
+ * `X-RateLimit-*` response headers.
+ *
+ * `rateLimit` is `null` when the response did not include any
+ * `X-RateLimit-*` headers. This typically means the endpoint or
+ * workspace tier has no configured limit (e.g. enterprise / unlimited),
+ * or the response came from a path that does not run through the
+ * rate-limit interceptor. Treat `null` as "rate-limit information is
+ * not available for this response" rather than as "zero requests
+ * remaining".
  *
  * @public
  */
-export type WithRateLimit<T> = T & { rateLimit: RateLimitInfo }
+export type WithRateLimit<T> = T & { rateLimit: RateLimitInfo | null }
 
 /**
  * Internal request options consumed by the transport layer.

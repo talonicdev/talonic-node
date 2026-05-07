@@ -220,7 +220,7 @@ export class TalonicTimeoutError extends TalonicError {
 export function errorFromResponse(input: {
   status: number
   body: unknown
-  rateLimit?: RateLimitInfo
+  rateLimit?: RateLimitInfo | null
 }): TalonicError {
   const { status, body, rateLimit } = input
   const parsed = parseApiError(body)

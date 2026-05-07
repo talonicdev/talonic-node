@@ -42,10 +42,17 @@ interface ResolvedConfig {
  * @internal
  */
 export interface RequestResult<T> {
-  /** Parsed response body, with rate-limit metadata attached. */
-  data: T & { rateLimit: RateLimitInfo }
-  /** Rate-limit headers from the response. */
-  rateLimit: RateLimitInfo
+  /**
+   * Parsed response body, with rate-limit metadata attached. `rateLimit`
+   * is `null` when the response carried no `X-RateLimit-*` headers (see
+   * {@link WithRateLimit}).
+   */
+  data: T & { rateLimit: RateLimitInfo | null }
+  /**
+   * Rate-limit headers from the response. `null` when the response had
+   * no `X-RateLimit-*` headers (e.g. unlimited tier).
+   */
+  rateLimit: RateLimitInfo | null
   /** Server-assigned request ID, if present. */
   requestId?: string
   /** HTTP status code (always 2xx for successful results). */
@@ -166,13 +173,13 @@ export class Transport {
       throw errorFromResponse({ status: response.status, body: responseBody, rateLimit })
     }
 
-    const data = responseBody as T & { rateLimit?: RateLimitInfo }
+    const data = responseBody as T & { rateLimit?: RateLimitInfo | null }
     if (typeof data === "object" && data !== null) {
       data.rateLimit = rateLimit
     }
 
     return {
-      data: data as T & { rateLimit: RateLimitInfo },
+      data: data as T & { rateLimit: RateLimitInfo | null },
       rateLimit,
       requestId,
       status: response.status,
@@ -240,10 +247,20 @@ async function readResponseBody(response: Response): Promise<unknown> {
   return text.length > 0 ? text : undefined
 }
 
-function parseRateLimit(headers: Headers): RateLimitInfo {
-  const limit = parseIntHeader(headers.get("x-ratelimit-limit"), 0)
-  const remaining = parseIntHeader(headers.get("x-ratelimit-remaining"), 0)
-  const resetAt = parseResetHeader(headers.get("x-ratelimit-reset"))
+function parseRateLimit(headers: Headers): RateLimitInfo | null {
+  const limitHeader = headers.get("x-ratelimit-limit")
+  const remainingHeader = headers.get("x-ratelimit-remaining")
+  const resetHeader = headers.get("x-ratelimit-reset")
+  // All-or-nothing: if none of the X-RateLimit-* headers are present,
+  // the response came from a path with no rate limit configured (e.g.
+  // enterprise tier). Return null so callers do not see misleading
+  // sentinel zeros and conflate "no limit" with "limit hit".
+  if (limitHeader === null && remainingHeader === null && resetHeader === null) {
+    return null
+  }
+  const limit = parseIntHeader(limitHeader, 0)
+  const remaining = parseIntHeader(remainingHeader, 0)
+  const resetAt = parseResetHeader(resetHeader)
   return { limit, remaining, resetAt }
 }
 

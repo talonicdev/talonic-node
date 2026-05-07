@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`WithRateLimit<T>.rateLimit` is now nullable.** When the response carries no `X-RateLimit-*` headers (e.g. enterprise / unlimited tier, or any path that does not run through the rate-limit interceptor), the SDK returns `rateLimit: null` instead of a sentinel `{limit: 0, remaining: 0, resetAt: 1970-01-01}` object. Breaking change at the type level: consumers reading `result.rateLimit.limit` will get a TypeScript error and need to handle the null case explicitly. The previous sentinel silently conflated "no limit configured" with "limit hit" with "headers missing"; treating the absence as a real value was a footgun this fix removes. `TalonicRateLimitError.rateLimit` stays non-null since a 429 always carries headers in practice; if any do not, the error class falls back to the sentinel internally so consumers reading `err.rateLimit.resetAt` are not affected.
+
 ## [0.1.7] - 2026-05-02
 
 ### Added
