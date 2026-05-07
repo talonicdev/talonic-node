@@ -89,7 +89,14 @@ await talonic.jobs.list()
 await talonic.jobs.get(id)
 await talonic.jobs.getResults(id)
 await talonic.jobs.cancel(id)
+
+// Credits
+await talonic.credits.getBalance()
+// returns { balance_credits, balance_eur, burn_rate_30d_credits,
+//           projected_runway_days, tier, tier_resets_at }
 ```
+
+Per-call cost is also surfaced on the `extract` response under `result.cost` (`costCredits`, `costEur`, `balanceCredits`, `cellsResolvedRegistry`, `cellsResolvedAi`), parsed from the `X-Talonic-Cost-*` and `X-Talonic-Balance-*` response headers. `null` on calls that do not run through the extract path.
 
 ## CLI
 

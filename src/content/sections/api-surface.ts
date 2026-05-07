@@ -200,4 +200,67 @@ await talonic.jobs.cancel(id)`,
     ],
     mentions: ["jobs", "batch", "async"],
   },
+  {
+    slug: "credits",
+    parentSlug: "api-surface",
+    title: "Credits",
+    seoTitle: "Credits API — Talonic Node SDK",
+    description:
+      "Read the workspace credit balance, EUR value, 30-day burn rate, projected runway, tier, and next monthly tier-reset timestamp from the Talonic Node SDK.",
+    content: [
+      {
+        type: "paragraph",
+        text: "Use `talonic.credits.getBalance()` to fetch the workspace's current credit balance and budget metadata. Pair this with the `cost` block on `extract` responses for budget-aware behaviour: read the balance before scheduling a batch, log per-call cost as you go.",
+      },
+      {
+        type: "code",
+        language: "typescript",
+        code: `// Get the enriched workspace balance
+const balance = await talonic.credits.getBalance()
+
+// {
+//   balance_credits: 1888,
+//   balance_eur: 9.44,
+//   burn_rate_30d_credits: 360,
+//   projected_runway_days: 157,    // -1 means no consumption in the trailing window
+//   tier: "pro",
+//   tier_resets_at: "2026-06-01T00:00:00.000Z"
+// }
+
+// Per-call cost is also surfaced on extract responses
+const result = await talonic.extract({ ... })
+console.log(result.cost)
+// {
+//   costCredits: 12,
+//   costEur: 0.06,
+//   balanceCredits: 1876,           // post-call balance
+//   cellsResolvedRegistry: 2,       // cheap path
+//   cellsResolvedAi: 10             // priced path
+// }
+// null on calls that do not run through the extract path.`,
+      },
+    ],
+    related: [
+      { label: "Extract", slug: "extract" },
+      { label: "Errors", slug: "errors" },
+    ],
+    faq: [
+      {
+        question: "How do I check my Talonic credit balance from the Node SDK?",
+        answer:
+          "Call talonic.credits.getBalance(). It returns balance_credits, balance_eur, burn_rate_30d_credits, projected_runway_days, tier, and tier_resets_at. Read-only and safe to call at any time.",
+      },
+      {
+        question: "What is the cost field on extract responses?",
+        answer:
+          "Every extract response carries a `cost` block parsed from the X-Talonic-Cost-* and X-Talonic-Balance-* response headers. Fields: costCredits, costEur, balanceCredits, cellsResolvedRegistry, cellsResolvedAi. Null on calls that did not run through extract.",
+      },
+      {
+        question: "What does projected_runway_days = -1 mean?",
+        answer:
+          "It means the workspace has had zero credit consumption in the trailing 30 days, so a meaningful runway projection cannot be computed. Treat -1 as 'unknown' rather than '0 days'.",
+      },
+    ],
+    mentions: ["credits", "balance", "EUR", "burn rate", "runway", "tier", "cost", "budget"],
+  },
 ]
