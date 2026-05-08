@@ -4,7 +4,7 @@ Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-vali
 
 > **Status:** Core surface stable. Live `extract` is verified end-to-end against production. `documents.filter()` now passes canonical field names directly to the API for server-side resolution; remaining edge cases are tracked in [Known issues](#known-issues).
 
-> **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it locally into Claude Desktop, Cursor, Cline, Continue, or Cowork via `npx -y @talonic/mcp@latest`, or use the hosted endpoint at `https://mcp.talonic.com/mcp` from Claude.ai's "Add custom connector" flow. Either way, any MCP-aware agent can extract documents directly.
+> **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Easiest install is the hosted endpoint at `https://mcp.talonic.com/mcp` from Claude.ai's "Add custom connector" flow, which authenticates via OAuth 2.1 against `app.talonic.com` (no API key in the connector config). For IDE-style clients (Claude Desktop, Cursor, Cline, Continue, Cowork), use the local stdio install: `npx -y @talonic/mcp@latest` with `TALONIC_API_KEY` in env. Either way, any MCP-aware agent can extract documents directly.
 
 ## Install
 
@@ -115,10 +115,10 @@ talonic --help
 ```ts
 const talonic = new Talonic({
   apiKey: process.env.TALONIC_API_KEY!,
-  baseUrl: "https://api.talonic.com",   // default
-  timeout: 60_000,                       // ms; default 60s
-  maxRetries: 3,                         // 429, 500, 502, 503, 504, network, timeout
-  fetch: customFetch,                    // optional override (e.g. for testing)
+  baseUrl: "https://api.talonic.com", // default
+  timeout: 60_000, // ms; default 60s
+  maxRetries: 3, // 429, 500, 502, 503, 504, network, timeout
+  fetch: customFetch, // optional override (e.g. for testing)
 })
 ```
 
@@ -131,8 +131,8 @@ Every successful response is wrapped in `WithRateLimit<T>` and includes a `rateL
 ```ts
 const result = await talonic.schemas.list()
 
-result.data         // SchemaList
-result.rateLimit    // { limit, remaining, resetAt }
+result.data // SchemaList
+result.rateLimit // { limit, remaining, resetAt }
 ```
 
 > **Caveat (v0.1.7):** the rate-limit values currently come back as sentinel zeros (`{limit: 0, remaining: 0, resetAt: 1970-01-01T00:00:00.000Z}`) because either the API is not emitting `X-RateLimit-*` headers or the transport layer is not parsing them. The wrapper exists, the values are not yet meaningful. Tracked for a fix.
