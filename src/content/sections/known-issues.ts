@@ -18,7 +18,7 @@ export const sections: RawSection[] = [
         items: [
           "**Auto-discovery extract (no schema) currently returns 500 on production.** Always provide a `schema` or `schema_id` in v0.1.",
           '**Schema definitions: prefer full JSON Schema for now.** The flat key-type map (`{ vendor_name: "string" }`) is documented as supported but the server-side normaliser does not translate it yet. Send full JSON Schema with `type: "object"` and `properties`.',
-          '**`is_not_empty` filter currently underreports.** A filter condition with `operator: "is_not_empty"` may return zero documents even when the field has populated values. Use specific operators (`eq`, `gt`, `contains`, etc.) instead.',
+          '**`is_not_empty` filter checks materialized data.** The operator works correctly for documents that have completed extraction and materialization (typically within seconds). For batch-mode documents, materialization occurs after the batch poll cycle applies results.',
         ],
       },
       {
@@ -56,25 +56,24 @@ const result = await talonic.extract({
       },
       {
         type: "paragraph",
-        text: "For the `is_not_empty` filter issue, replace it with a specific operator that matches your use case. For example, use `contains` with a non-empty pattern or `gt` with a threshold value. This produces correct results while the underlying filter is being fixed.",
+        text: "The `is_not_empty` operator now works correctly for all documents that have completed extraction. It checks the materialized values index, which is updated within seconds of extraction completing via the `DOCUMENT_RESOLVED` event.",
       },
       {
         type: "code",
         language: "typescript",
-        title: "Workaround: replace is_not_empty with specific operators",
-        code: `// BAD: is_not_empty may return zero documents incorrectly
+        title: "Using is_not_empty to find documents with populated fields",
+        code: `// Find documents where vendor.name has been extracted
 const filtered = await talonic.documents.filter({
   conditions: [
     { field: 'vendor.name', operator: 'is_not_empty' },
   ],
 })
 
-// GOOD: use a specific operator instead
-const filtered = await talonic.documents.filter({
+// Combine with other operators
+const filtered2 = await talonic.documents.filter({
   conditions: [
-    { field: 'vendor.name', operator: 'contains', value: '' },
-    // or for numeric fields:
-    // { field: 'total_amount', operator: 'gte', value: 0 },
+    { field: 'vendor.name', operator: 'is_not_empty' },
+    { field: 'total_amount', operator: 'gt', value: 1000 },
   ],
 })`,
       },
@@ -154,9 +153,9 @@ const schema = await talonic.schemas.create({
           "Set include_markdown: true on your extract() call to get the raw OCR text alongside structured output. Compare the markdown to the extracted data to determine whether the issue is OCR accuracy or schema mapping. You can also call talonic.documents.getMarkdown(id) for any previously processed document.",
       },
       {
-        question: "What is the workaround for the is_not_empty filter bug?",
+        question: "How does the is_not_empty filter operator work?",
         answer:
-          "Replace is_not_empty with a specific operator that matches your use case. For string fields, use contains with an empty string value. For numeric fields, use gte with 0. These produce correct results while the is_not_empty operator is being fixed server-side.",
+          "The is_not_empty operator checks the materialized values index for a given field. It returns documents where the field has at least one non-null value. Results are available within seconds of extraction completing. For batch-mode documents, materialization occurs after the batch poll cycle applies results.",
       },
     ],
     mentions: ["known issues", "auto-discovery", "JSON Schema", "is_not_empty"],
