@@ -52,7 +52,7 @@ try {
       },
       {
         type: "paragraph",
-        text: "**TalonicNetworkError** and **TalonicTimeoutError** represent transport-level failures that never reached the server. Both carry `status: 0` and are retried automatically. The `code` property is set to `\"network_error\"` or `\"timeout\"` respectively, and `retryable` is always `true`. `TalonicNetworkError` preserves the original error as `cause` for debugging DNS failures, TCP resets, and unreachable hosts. `TalonicTimeoutError` includes a `timeoutMs` property with the configured timeout value that was exceeded.",
+        text: '**TalonicNetworkError** and **TalonicTimeoutError** represent transport-level failures that never reached the server. Both carry `status: 0` and are retried automatically. The `code` property is set to `"network_error"` or `"timeout"` respectively, and `retryable` is always `true`. `TalonicNetworkError` preserves the original error as `cause` for debugging DNS failures, TCP resets, and unreachable hosts. `TalonicTimeoutError` includes a `timeoutMs` property with the configured timeout value that was exceeded.',
       },
       {
         type: "code",
@@ -219,7 +219,7 @@ async function extractWithLogging(filePath: string, schemaId: string) {
       },
       {
         type: "paragraph",
-        text: "For logging and observability, capture `err.code`, `err.status`, and `err.requestId` on every failure. The `code` is a machine-readable string like `\"invalid_schema\"` or `\"rate_limited\"` that is safe to use in metrics and alerting rules. The `err.name` property gives you the class name (e.g. `'TalonicValidationError'`) which is useful for grouping errors by category in your monitoring dashboard.",
+        text: 'For logging and observability, capture `err.code`, `err.status`, and `err.requestId` on every failure. The `code` is a machine-readable string like `"invalid_schema"` or `"rate_limited"` that is safe to use in metrics and alerting rules. The `err.name` property gives you the class name (e.g. `\'TalonicValidationError\'`) which is useful for grouping errors by category in your monitoring dashboard.',
       },
       {
         type: "code",

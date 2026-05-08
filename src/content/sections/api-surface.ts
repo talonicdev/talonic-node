@@ -238,7 +238,8 @@ console.log(deleted.deleted) // true`,
     faq: [
       {
         question: "How do I list documents with the Talonic SDK?",
-        answer: "Call talonic.documents.list() with optional parameters like limit, cursor, status, source_id, after, before, and search. Results are paginated using cursor-based navigation.",
+        answer:
+          "Call talonic.documents.list() with optional parameters like limit, cursor, status, source_id, after, before, and search. Results are paginated using cursor-based navigation.",
       },
       {
         question: "What does getMarkdown() return?",
@@ -449,7 +450,7 @@ const result = await talonic.extract({
       },
       {
         type: "paragraph",
-        text: "Schema definitions follow JSON Schema format with `type: \"object\"` and `properties`. Each property specifies a field name and type that the extraction engine will resolve. Updating a schema does not retroactively change existing extractions, but all future **extract()** calls using that `schema_id` will pick up the new definition. The `version` field is bumped automatically on each update so you can track which version a given extraction used.",
+        text: 'Schema definitions follow JSON Schema format with `type: "object"` and `properties`. Each property specifies a field name and type that the extraction engine will resolve. Updating a schema does not retroactively change existing extractions, but all future **extract()** calls using that `schema_id` will pick up the new definition. The `version` field is bumped automatically on each update so you can track which version a given extraction used.',
       },
       {
         type: "code",
@@ -502,7 +503,7 @@ console.log(schema.links)        // { self: '...', extractions: '...', dashboard
       {
         type: "callout",
         variant: "warning",
-        text: "Use full JSON Schema format (`type: \"object\"` with `properties`) rather than the flat key-type shorthand. The server-side normaliser for the shorthand format is not fully supported yet.",
+        text: 'Use full JSON Schema format (`type: "object"` with `properties`) rather than the flat key-type shorthand. The server-side normaliser for the shorthand format is not fully supported yet.',
       },
     ],
     related: [

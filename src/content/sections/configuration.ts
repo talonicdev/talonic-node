@@ -112,13 +112,15 @@ const devClient = new Talonic({
           {
             name: "maxRetries",
             type: "number",
-            description: "Max retry attempts for transient failures (429, 5xx, network, timeout). Set to 0 to disable.",
+            description:
+              "Max retry attempts for transient failures (429, 5xx, network, timeout). Set to 0 to disable.",
             default: "3",
           },
           {
             name: "fetch",
             type: "function",
-            description: "Custom fetch implementation for testing, instrumentation, or polyfilling Node < 18.",
+            description:
+              "Custom fetch implementation for testing, instrumentation, or polyfilling Node < 18.",
           },
         ],
       },
