@@ -18,7 +18,7 @@ export const sections: RawSection[] = [
         items: [
           "**Auto-discovery extract (no schema) currently returns 500 on production.** Always provide a `schema` or `schema_id` in v0.1.",
           '**Schema definitions: prefer full JSON Schema for now.** The flat key-type map (`{ vendor_name: "string" }`) is documented as supported but the server-side normaliser does not translate it yet. Send full JSON Schema with `type: "object"` and `properties`.',
-          '**`is_not_empty` filter checks materialized data.** The operator works correctly for documents that have completed extraction and materialization (typically within seconds). For batch-mode documents, materialization occurs after the batch poll cycle applies results.',
+          "**`is_not_empty` filter checks materialized data.** The operator works correctly for documents that have completed extraction and materialization (typically within seconds). For batch-mode documents, materialization occurs after the batch poll cycle applies results.",
         ],
       },
       {
