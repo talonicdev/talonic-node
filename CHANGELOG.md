@@ -7,15 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-05-08
+
+### Changed
+
+- Prettier re-run on `src/content/sections/known-issues.ts` after the 0.1.14 `is_not_empty` doc update. Formatting-only.
+
+## [0.1.14] - 2026-05-08
+
+### Changed
+
+- README and `docs/sections.json` `is_not_empty` copy refreshed. The operator is no longer described as "currently underreports"; it checks the materialized values index, which the upstream API updates within seconds of extraction completing via the `DOCUMENT_RESOLVED` event. For batch-mode documents, results reflect data after the batch poll cycle applies.
+
+## [0.1.13] - 2026-05-08
+
+### Changed
+
+- README MCP cross-reference reframed around the Claude.ai OAuth connector at `https://mcp.talonic.com/mcp` as the primary install path. Local stdio (`npx -y @talonic/mcp@latest` with `TALONIC_API_KEY`) is kept as the path for IDE clients (Claude Desktop, Cursor, Cline, Continue, Cowork).
+
+## [0.1.12] - 2026-05-07
+
+### Changed
+
+- `docs/sections.json` enriched with code examples; per-page content expanded to at least 4 paragraphs with a 6000+ character target on the high-traffic SDK pages. Improves SEO surface and gives the website's auto-generated docs more substance.
+
+## [0.1.11] - 2026-05-07
+
+### Changed
+
+- `docs/sections.json` enrichment pass: every SDK doc section has at least four paragraphs. Foundation for the further expansion in 0.1.12.
+
+## [0.1.10] - 2026-05-07
+
 ### Added
 
 - **`CostInfo` and per-call cost on `WithRateLimit<T>`.** The Talonic API now sets `X-Talonic-Cost-Credits`, `X-Talonic-Cost-EUR`, `X-Talonic-Balance-Credits`, `X-Talonic-Cells-Resolved-Registry`, and `X-Talonic-Cells-Resolved-AI` on extract responses. The transport now parses these headers and exposes them as `result.cost: CostInfo | null`. `null` for every endpoint that is not extract.
 - **`Credits` resource and `talonic.credits.getBalance()`.** Calls `GET /v1/credits/balance` and returns the enriched balance (credits, EUR, 30-day burn rate, projected runway days, tier, next reset). New `EnhancedBalance` interface exported from the package.
-- **`DocumentTriage` interface and tightened `Document.triage` typing.** The `triage` field on `Document` was previously typed as `Record<string, unknown>`, which compiled but gave callers no help. It is now `DocumentTriage | null` with named fields (`sensitivity`, `department`, `jurisdiction`, `pii_detected`, `pii_categories`, `regulated_data`, `confidentiality_marking`) and per-field nullability that mirrors the API response. `null` indicates the document has not been classified yet. `Document.mime_type` is now `string | null` to reflect the nullable database column.
+
+### Changed
+
+- README "API surface" surfaces `talonic.credits.getBalance()` and the `result.cost` field; the corresponding `api-surface` content section is updated.
+
+## [0.1.9] - 2026-05-07
+
+### Added
+
+- **`DocumentTriage` interface and tightened `Document.triage` typing.** The `triage` field on `Document` was previously typed as `Record<string, unknown>`, which compiled but gave callers no help. It is now `DocumentTriage | null` with named fields (`sensitivity`, `department`, `jurisdiction`, `pii_detected`, `pii_categories`, `regulated_data`, `confidentiality_marking`) and per-field nullability that mirrors the API response. `null` indicates the document has not been classified yet.
+
+### Changed
+
+- `Document.mime_type` is now `string | null` to reflect the nullable database column.
+
+## [0.1.8] - 2026-05-07
 
 ### Changed
 
 - **`WithRateLimit<T>.rateLimit` is now nullable.** When the response carries no `X-RateLimit-*` headers (e.g. enterprise / unlimited tier, or any path that does not run through the rate-limit interceptor), the SDK returns `rateLimit: null` instead of a sentinel `{limit: 0, remaining: 0, resetAt: 1970-01-01}` object. Breaking change at the type level: consumers reading `result.rateLimit.limit` will get a TypeScript error and need to handle the null case explicitly. The previous sentinel silently conflated "no limit configured" with "limit hit" with "headers missing"; treating the absence as a real value was a footgun this fix removes. `TalonicRateLimitError.rateLimit` stays non-null since a 429 always carries headers in practice; if any do not, the error class falls back to the sentinel internally so consumers reading `err.rateLimit.resetAt` are not affected.
+
+### Fixed
+
+- Pre-existing prettier drift across 13 content/resource files cleaned up alongside the rate-limit fix.
 
 ## [0.1.7] - 2026-05-02
 

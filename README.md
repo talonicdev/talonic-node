@@ -132,10 +132,10 @@ Every successful response is wrapped in `WithRateLimit<T>` and includes a `rateL
 const result = await talonic.schemas.list()
 
 result.data // SchemaList
-result.rateLimit // { limit, remaining, resetAt }
+result.rateLimit // { limit, remaining, resetAt } | null
 ```
 
-> **Caveat (v0.1.7):** the rate-limit values currently come back as sentinel zeros (`{limit: 0, remaining: 0, resetAt: 1970-01-01T00:00:00.000Z}`) because either the API is not emitting `X-RateLimit-*` headers or the transport layer is not parsing them. The wrapper exists, the values are not yet meaningful. Tracked for a fix.
+Since 0.1.8, `rateLimit` is **nullable**. When the response carries no `X-RateLimit-*` headers (e.g. enterprise / unlimited tier, or any path that does not run through the rate-limit interceptor) the SDK returns `rateLimit: null` instead of a sentinel zeros object. Handle the null case explicitly when reading `result.rateLimit.limit` and friends. `TalonicRateLimitError.rateLimit` stays non-null on 429 since the response always carries the headers in practice.
 
 ## Errors
 
@@ -180,9 +180,7 @@ try {
   ```
 - **Filter requires `filterable: true` fields.** Call `talonic.search(...)` first; only entries in the response where `filterable: true` can be used as `field` (or `fieldId`) on `talonic.documents.filter(...)`. Entries with `filterable: false` exist in the schema but have no extracted data yet.
 - **Schema field type affects filter operators.** Numeric operators (`gt`, `gte`, `lt`, `lte`, `between`) only work on fields typed as `number` in the schema. Numeric values stored as strings (with currency symbols, locale formatting, etc.) silently return zero results. Type your schema fields appropriately at design time.
-- **`is_not_empty` filter currently underreports.** A filter condition with `operator: "is_not_empty"` may return zero documents even when the field has populated values in the workspace. The other operators (`eq`, `gt`, `gte`, `lt`, `lte`, `contains`, `between`, `is_empty`) work as expected.
-- **Rate-limit values come back as sentinel zeros.** See the [Rate limits](#rate-limits) section. The `WithRateLimit<T>` wrapper is in place; the values are not yet meaningful.
-- **Cost, EUR price, and remaining balance are not surfaced** in API responses. Credit balance must be checked in the Talonic dashboard.
+- **`is_not_empty` filter checks materialized data.** The operator works correctly for documents that have completed extraction and materialization (typically within seconds via the `DOCUMENT_RESOLVED` event). For batch-mode documents, materialization occurs after the batch poll cycle applies results. If a value is known to be populated but `is_not_empty` does not return it, give the materialized-values index a moment after extraction and retry.
 
 ## Development
 
