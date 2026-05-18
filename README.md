@@ -6,6 +6,8 @@ Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-vali
 
 > **Looking for the AI agent path?** [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Easiest install is the hosted endpoint at `https://mcp.talonic.com/mcp` from Claude.ai's "Add custom connector" flow, which authenticates via OAuth 2.1 against `app.talonic.com` (no API key in the connector config). For IDE-style clients (Claude Desktop, Cursor, Cline, Continue, Cowork), use the local stdio install: `npx -y @talonic/mcp@latest` with `TALONIC_API_KEY` in env. Either way, any MCP-aware agent can extract documents directly.
 
+> **Looking for the Python path?** [`talonic`](https://github.com/talonicdev/talonic-python) on PyPI. `pip install talonic`. Same API surface as this Node SDK, both sync and async.
+
 ## Install
 
 ```bash
