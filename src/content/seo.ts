@@ -1,5 +1,6 @@
 import type { NavSection } from "./types"
 
+/** SDK documentation navigation tree — consumed by website docs renderer */
 export const SDK_NAV_SECTIONS: NavSection[] = [
   {
     id: "overview",
