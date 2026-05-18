@@ -1,4 +1,3 @@
-// Navigation structure for SDK documentation pages
 import type { NavSection } from "./types"
 
 export const SDK_NAV_SECTIONS: NavSection[] = [
