@@ -7,6 +7,11 @@ on:
       - 'src/**'
       - 'docs/**'
       - 'package.json'
+  # Manual trigger as a safety valve. Reach for this when an automated
+  # rerun is stuck in queue or when you need to re-fire the publish chain
+  # without making a code change (e.g. after rotating a secret). From the
+  # CLI: `gh workflow run publish.yml -r main`.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -124,6 +129,29 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # GitHub Release is what Glama and similar surfaces track for "Recent
+      # Releases" — npm publishes alone are not enough. Fires whenever a
+      # publish succeeds (no `bumped == 'true'` gate, which would silently
+      # strand the Release on reruns of a failed publish). Pre-checks for
+      # an existing tag so the step is idempotent on reruns; the
+      # `continue-on-error: true` absorbs any other failure mode without
+      # breaking the downstream website/platform rebuilds.
+      - name: Create GitHub Release
+        if: success()
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "Release v${VERSION} already exists. Skipping create."
+            exit 0
+          fi
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: Trigger website rebuild
         if: success()
