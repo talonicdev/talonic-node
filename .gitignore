@@ -26,3 +26,6 @@ yarn-error.log*
 
 # Test artifacts
 .vitest-cache/
+
+# Integration adapter lockfiles (local file: refs, not portable)
+integrations/*/package-lock.json

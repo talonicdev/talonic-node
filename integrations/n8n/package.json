@@ -1,0 +1,21 @@
+{
+  "name": "n8n-nodes-talonic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SCAFFOLD: n8n community node for Talonic document extraction. See integrations/PLAN.md.",
+  "license": "MIT",
+  "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
+  "homepage": "https://talonic.com",
+  "keywords": ["n8n-community-node-package", "talonic", "document-extraction"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": ["dist/credentials/TalonicApi.credentials.js"],
+    "nodes": ["dist/nodes/Talonic/Talonic.node.js"]
+  },
+  "scripts": {
+    "build": "echo 'scaffold — wire up tsc + gulp icons per the n8n node template' && exit 0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

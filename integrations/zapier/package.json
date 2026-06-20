@@ -1,0 +1,16 @@
+{
+  "name": "talonic-zapier",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SCAFFOLD: Zapier integration for Talonic document extraction. See integrations/PLAN.md.",
+  "license": "MIT",
+  "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
+  "homepage": "https://talonic.com",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "echo 'scaffold — run `zapier build` once the CLI app is registered' && exit 0"
+  },
+  "dependencies": {
+    "zapier-platform-core": "^16.0.0"
+  }
+}
