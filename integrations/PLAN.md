@@ -55,8 +55,8 @@ document into reliable structured data with per-field confidence scores."
 | Vercel AI SDK | `vercel-ai-sdk/` | **Built + tested** (10 tests) | `@talonic/node` |
 | LangChain (JS/TS) | `langchain/` | **Built + tested** (8 tests) | `@talonic/node` |
 | LlamaIndex (Python) | `llamaindex/` | Scaffold | Talonic Python SDK / REST |
-| n8n community node | `n8n/` | Scaffold | REST (`/v1/extract`) |
-| Zapier | `zapier/` | Scaffold | REST (`/v1/extract`) |
+| n8n community node | `n8n/` | **Built + tested** (17 tests) | `@talonic/node` |
+| Zapier | `zapier/` | **Built + tested** (15 tests) | `@talonic/node` |
 
 ### Built, fully working
 
@@ -68,6 +68,17 @@ document into reliable structured data with per-field confidence scores."
   LangChain `tool()` helper from `@langchain/core/tools`, producing a
   `DynamicStructuredTool` (zod `schema`, named `talonic_extract_document`).
   Returns a JSON string (LangChain tool outputs are strings). Unit-tested.
+- **`n8n-nodes-talonic`** — an n8n community node (`INodeType` + `talonicApi`
+  `ICredentialType`) with a single **Extract** operation. Programmatic
+  `execute()` reads the `talonicApi` credential, instantiates `@talonic/node`,
+  maps the document source (file URL / upstream binary / document ID) + optional
+  schema, calls `client.extract`, and returns the trimmed output. Built with
+  `tsc` + a gulp icon copy; tested with vitest (SDK + n8n context mocked).
+- **`talonic-zapier`** — a Zapier Platform CLI app (`zapier-platform-core`) with
+  custom API-key auth and one **Extract Structured Data** create. `perform`
+  instantiates `@talonic/node` and calls `client.extract`; a Zapier file-hydrate
+  URL is passed through as `file_url`. Tested with vitest via `createAppTester`
+  (SDK stubbed, no live key).
 
 Both have their own `tsconfig` / `tsup` / `vitest` matching the repo's tooling,
 list `@talonic/node` + the framework + `zod` as **peer dependencies** (so the
@@ -76,29 +87,12 @@ the bundle.
 
 ### Scaffolded — exact path to finish
 
-**LlamaIndex (Python)** — `llamaindex/talonic_llamaindex/__init__.py`
+**LlamaIndex (Python)** — `llamaindex/talonic_llamaindex/__init__.py` (held pending a benchmark decision; left untouched).
 - Wrap with `FunctionTool.from_defaults(fn=extract_document, name=…, description=…)`.
 - Implement `extract_document(...)` per the shared contract above. Prefer the
   Talonic Python SDK once published; until then call `/v1/extract` with `httpx`.
 - Add `llama-index-core` + `httpx` to `pyproject.toml` deps, add a pytest with a
   mocked transport, publish to PyPI as `talonic-llamaindex`.
-
-**n8n community node** — `n8n/nodes/Talonic/Talonic.node.ts` + `credentials/TalonicApi.credentials.ts`
-- Follow the n8n declarative-node template (`n8n-workflow` dependency, `tsc` +
-  gulp icon build). Credential already injects `Authorization: Bearer` and has a
-  `test` against `/v1/credits`.
-- Implement the single "Extract" operation: build the multipart form from the
-  selected document source and optional schema, POST `/v1/extract`, return the
-  trimmed output. Add a `talonic.svg` icon. Publish as `n8n-nodes-talonic` (the
-  `n8n-community-node-package` keyword makes it discoverable in n8n).
-
-**Zapier** — `zapier/src/index.js`
-- Zapier Platform CLI app. Custom API-key auth + `beforeRequest` Bearer header
-  are wired; `test` hits `/v1/credits`.
-- Implement `creates.extract_document.operation.perform` to build the
-  `/v1/extract` request (use Zapier file hydration for uploads) and return the
-  trimmed output. `zapier register` + `zapier push`, then submit for the public
-  app directory.
 
 ---
 

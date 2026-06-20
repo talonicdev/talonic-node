@@ -1,15 +1,24 @@
 /**
- * Talonic API credential for the n8n community node — SCAFFOLD.
+ * Talonic API credential for the n8n community node.
  *
- * @ts-nocheck — `n8n-workflow` is a peer not installed in this scaffold.
+ * Holds the Talonic API key and injects `Authorization: Bearer <key>`
+ * into every request. The `test` block lets n8n's "Test" button verify
+ * the key against a cheap endpoint (`GET /v1/credits`).
  */
-// @ts-nocheck
-import type { ICredentialType, INodeProperties } from "n8n-workflow"
+import type {
+  IAuthenticateGeneric,
+  ICredentialTestRequest,
+  ICredentialType,
+  INodeProperties,
+} from "n8n-workflow"
 
 export class TalonicApi implements ICredentialType {
   name = "talonicApi"
+
   displayName = "Talonic API"
+
   documentationUrl = "https://talonic.com/docs"
+
   properties: INodeProperties[] = [
     {
       displayName: "API Key",
@@ -17,12 +26,13 @@ export class TalonicApi implements ICredentialType {
       type: "string",
       typeOptions: { password: true },
       default: "",
-      description: "Your Talonic API key (starts with tlnc_). Get one at https://app.talonic.com.",
+      required: true,
+      description:
+        "Your Talonic API key (starts with tlnc_). Get one at https://app.talonic.com.",
     },
   ]
 
-  // Injects `Authorization: Bearer tlnc_...` into every request.
-  authenticate = {
+  authenticate: IAuthenticateGeneric = {
     type: "generic",
     properties: {
       headers: {
@@ -31,8 +41,7 @@ export class TalonicApi implements ICredentialType {
     },
   }
 
-  // Lets n8n's "Test" button verify the key against a cheap endpoint.
-  test = {
+  test: ICredentialTestRequest = {
     request: {
       baseURL: "https://api.talonic.com",
       url: "/v1/credits",
