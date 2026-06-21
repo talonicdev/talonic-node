@@ -93,4 +93,10 @@ export type { CreateJobParams, Job, JobList, JobResults, ListJobsParams } from "
 export { Credits } from "./resources/credits.js"
 export type { EnhancedBalance } from "./resources/credits.js"
 
+export { Pricing } from "./resources/pricing.js"
+export type { PricingCatalog, PricingLine } from "./resources/pricing.js"
+
+export { Usage } from "./resources/usage.js"
+export type { UsageByFunction, UsageByFunctionLine } from "./resources/usage.js"
+
 export type { Pagination } from "./resources/pagination.js"

@@ -4,7 +4,9 @@ import { type ExtractParams, type ExtractResult, performExtract } from "./resour
 import { Extractions } from "./resources/extractions.js"
 import { Fields } from "./resources/fields.js"
 import { Jobs } from "./resources/jobs.js"
+import { Pricing } from "./resources/pricing.js"
 import { Schemas } from "./resources/schemas.js"
+import { Usage } from "./resources/usage.js"
 import type { SearchOptions, SearchResult } from "./resources/search.js"
 import { Transport } from "./transport.js"
 import type { TalonicConfig, WithRateLimit } from "./types.js"
@@ -55,6 +57,12 @@ export class Talonic {
   /** Credits resource. Read the workspace credit balance, burn rate, and runway. */
   readonly credits: Credits
 
+  /** Pricing resource. Read the public credit catalog to predict spend before running. */
+  readonly pricing: Pricing
+
+  /** Usage resource. Read per-function credit consumption over a trailing window. */
+  readonly usage: Usage
+
   constructor(config: TalonicConfig) {
     this.#transport = new Transport(config)
     this.fields = new Fields(this.#transport)
@@ -63,6 +71,8 @@ export class Talonic {
     this.schemas = new Schemas(this.#transport)
     this.jobs = new Jobs(this.#transport)
     this.credits = new Credits(this.#transport)
+    this.pricing = new Pricing(this.#transport)
+    this.usage = new Usage(this.#transport)
   }
 
   /**
