@@ -2,15 +2,37 @@
   "name": "talonic-zapier",
   "version": "0.1.0",
   "private": true,
-  "description": "SCAFFOLD: Zapier integration for Talonic document extraction. See integrations/PLAN.md.",
+  "description": "Zapier integration for Talonic document extraction. Turn any document into schema-validated JSON inside your Zaps.",
   "license": "MIT",
   "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
   "homepage": "https://talonic.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/talonicdev/talonic-node.git",
+    "directory": "integrations/zapier"
+  },
+  "keywords": [
+    "talonic",
+    "zapier",
+    "document-extraction",
+    "structured-data"
+  ],
   "main": "src/index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "build": "echo 'scaffold — run `zapier build` once the CLI app is registered' && exit 0"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate": "zapier validate",
+    "zapier-test": "zapier test"
   },
   "dependencies": {
+    "@talonic/node": ">=0.1.0",
     "zapier-platform-core": "^16.0.0"
+  },
+  "devDependencies": {
+    "@talonic/node": "file:../..",
+    "vitest": "^3.2.4"
   }
 }

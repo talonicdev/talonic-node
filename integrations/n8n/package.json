@@ -2,20 +2,59 @@
   "name": "n8n-nodes-talonic",
   "version": "0.1.0",
   "private": true,
-  "description": "SCAFFOLD: n8n community node for Talonic document extraction. See integrations/PLAN.md.",
+  "description": "n8n community node for Talonic document extraction. Turn any document into schema-validated JSON inside your n8n workflows.",
   "license": "MIT",
   "author": "Talonic GmbH <info@talonic.ai> (https://talonic.com)",
   "homepage": "https://talonic.com",
-  "keywords": ["n8n-community-node-package", "talonic", "document-extraction"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/talonicdev/talonic-node.git",
+    "directory": "integrations/n8n"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "talonic",
+    "document-extraction",
+    "structured-data",
+    "ocr",
+    "pdf"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
-    "credentials": ["dist/credentials/TalonicApi.credentials.js"],
-    "nodes": ["dist/nodes/Talonic/Talonic.node.js"]
+    "credentials": [
+      "dist/credentials/TalonicApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Talonic/Talonic.node.js"
+    ]
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "echo 'scaffold — wire up tsc + gulp icons per the n8n node template' && exit 0"
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@talonic/node": ">=0.1.0"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@talonic/node": "file:../..",
+    "@types/node": "^22.10.0",
+    "gulp": "^5.0.0",
+    "n8n-workflow": "^1.66.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.4"
   }
 }
