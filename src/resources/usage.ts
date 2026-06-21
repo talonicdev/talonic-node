@@ -61,7 +61,7 @@ export class Usage {
   async getByFunction(days?: number): Promise<UsageByFunction> {
     const result = await this.#transport.request<UsageByFunction>({
       method: "GET",
-      path: "/v1/usage",
+      path: "/v1/usage/credits",
       query: days != null ? { days: String(days) } : undefined,
     })
     return result.data

@@ -66,12 +66,12 @@
     "prepublishOnly": "npm run typecheck && npm run check:spec && npm run build && npm test"
   },
   "devDependencies": {
-    "@talonic/docs": "^0.17.0",
+    "@talonic/docs": "^0.20.27",
     "@types/node": "^22.10.0",
     "prettier": "^3.4.0",
     "tsup": "^8.3.0",
-    "typescript": "^5.7.0",
     "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
     "vitest": "^3.2.4"
   }
 }
