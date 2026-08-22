@@ -1,4 +1,5 @@
 import { Credits } from "./resources/credits.js"
+import { DbSnapshots } from "./resources/db-snapshots.js"
 import { Documents } from "./resources/documents.js"
 import { type ExtractParams, type ExtractResult, performExtract } from "./resources/extract.js"
 import { Extractions } from "./resources/extractions.js"
@@ -63,6 +64,12 @@ export class Talonic {
   /** Usage resource. Read per-function credit consumption over a trailing window. */
   readonly usage: Usage
 
+  /**
+   * Database-snapshot resource. Read connected databases, their capture
+   * timelines, and the row-level deltas between consecutive captures.
+   */
+  readonly dbSnapshots: DbSnapshots
+
   constructor(config: TalonicConfig) {
     this.#transport = new Transport(config)
     this.fields = new Fields(this.#transport)
@@ -73,6 +80,7 @@ export class Talonic {
     this.credits = new Credits(this.#transport)
     this.pricing = new Pricing(this.#transport)
     this.usage = new Usage(this.#transport)
+    this.dbSnapshots = new DbSnapshots(this.#transport)
   }
 
   /**

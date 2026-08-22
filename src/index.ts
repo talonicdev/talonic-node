@@ -99,4 +99,26 @@ export type { PricingCatalog, PricingLine } from "./resources/pricing.js"
 export { Usage } from "./resources/usage.js"
 export type { UsageByFunction, UsageByFunctionLine } from "./resources/usage.js"
 
+export { DbSnapshots } from "./resources/db-snapshots.js"
+export type {
+  Delta,
+  DeltaChange,
+  DeltaChangeList,
+  DeltaColumnProfileEntry,
+  DeltaDetail,
+  DeltaSummary,
+  DeltaTable,
+  DeltaTotals,
+  EntityHistory,
+  EntityHistoryEvent,
+  GetEntityHistoryParams,
+  ListDeltaChangesParams,
+  SnapshotCadence,
+  SnapshotSource,
+  SnapshotSourceDetail,
+  SnapshotSourceList,
+  SnapshotSummary,
+  SnapshotTimelineEntry,
+} from "./resources/db-snapshots.js"
+
 export type { Pagination } from "./resources/pagination.js"

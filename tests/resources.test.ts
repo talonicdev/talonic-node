@@ -599,3 +599,176 @@ describe("talonic.credits", () => {
     expect(balance.projected_runway_days).toBe(-1)
   })
 })
+
+describe("talonic.dbSnapshots", () => {
+  it("listSources -> GET /v1/db-snapshots/sources and returns data[]", async () => {
+    const { talonic, fetchFn } = makeClient({
+      data: [
+        {
+          connection_id: "conn_1",
+          name: "Bridgeway prod",
+          engine: "postgres",
+          snapshot_count: 12,
+          capturing: true,
+          cadence: { enabled: true, interval_hours: 2, capture_mode: "incremental" },
+          latest_snapshot: {
+            id: "snap_12",
+            status: "running",
+            capture_mode: "incremental",
+            captured_at: "2026-08-20T10:00:00.000Z",
+            completed_at: null,
+            error: null,
+          },
+          latest_delta: {
+            id: "delta_12",
+            status: "partial",
+            computed_at: "2026-08-20T10:01:00.000Z",
+            totals: {
+              added: 0,
+              modified: 0,
+              removed: 0,
+              tables_touched: 0,
+              tables_total: 40,
+              drift: false,
+            },
+          },
+          last_complete_delta_id: "delta_11",
+        },
+      ],
+    })
+    const result = await talonic.dbSnapshots.listSources()
+    const [url, init] = lastCall(fetchFn)
+    expect(url).toContain("/v1/db-snapshots/sources")
+    expect(init.method).toBe("GET")
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0]?.capturing).toBe(true)
+    expect(result.data[0]?.latest_delta?.status).toBe("partial")
+    expect(result.data[0]?.last_complete_delta_id).toBe("delta_11")
+  })
+
+  it("getSource -> GET /v1/db-snapshots/sources/:connectionId with timeline", async () => {
+    const { talonic, fetchFn } = makeClient({
+      connection_id: "conn 1",
+      name: "n",
+      engine: "mssql",
+      snapshot_count: 2,
+      capturing: false,
+      cadence: null,
+      latest_snapshot: null,
+      latest_delta: null,
+      last_complete_delta_id: null,
+      timeline: [
+        {
+          snapshot_id: "snap_2",
+          captured_at: "2026-08-20T10:00:00.000Z",
+          status: "complete",
+          rows_changed: null,
+          drift: false,
+          delta_id: null,
+        },
+      ],
+    })
+    const source = await talonic.dbSnapshots.getSource("conn 1")
+    const [url] = lastCall(fetchFn)
+    expect(url).toContain("/v1/db-snapshots/sources/conn%201")
+    expect(source.timeline).toHaveLength(1)
+    expect(source.timeline[0]?.rows_changed).toBeNull()
+  })
+
+  it("getDelta -> GET /v1/db-snapshots/deltas/:deltaId", async () => {
+    const { talonic, fetchFn } = makeClient({
+      delta: {
+        id: "delta_9",
+        connection_id: "conn_1",
+        from_snapshot_id: "snap_8",
+        to_snapshot_id: "snap_9",
+        computed_at: "2026-08-20T10:00:00.000Z",
+        status: "complete",
+        totals: {
+          added: 264000,
+          modified: 12,
+          removed: 0,
+          tables_touched: 3,
+          tables_total: 40,
+          tables_skipped: 1,
+          drift: true,
+        },
+        tables: [
+          {
+            table_key: "public.orders",
+            added: 264000,
+            modified: 12,
+            removed: 0,
+            changes_truncated: true,
+            examined: true,
+            last_full_scan_at: "2026-08-20T08:00:00.000Z",
+            mode: "incremental",
+            fallback_reason: null,
+            columns_added: ["ref"],
+            columns_removed: [],
+          },
+        ],
+      },
+      from_snapshot: { id: "snap_8", captured_at: "2026-08-20T08:00:00.000Z" },
+      to_snapshot: { id: "snap_9", captured_at: "2026-08-20T10:00:00.000Z", status: "complete" },
+      column_profile: [],
+    })
+    const result = await talonic.dbSnapshots.getDelta("delta_9")
+    expect(lastCall(fetchFn)[0]).toContain("/v1/db-snapshots/deltas/delta_9")
+    expect(result.delta.status).toBe("complete")
+    expect(result.delta.totals.added).toBe(264000)
+    expect(result.delta.tables[0]?.changes_truncated).toBe(true)
+  })
+
+  it("listChanges -> GET /v1/db-snapshots/deltas/:deltaId/changes with table, limit, offset", async () => {
+    const { talonic, fetchFn } = makeClient({ data: [], total: 0, limit: 50, offset: 0 })
+    await talonic.dbSnapshots.listChanges("delta_9", {
+      table: "public.orders",
+      limit: 100,
+      offset: 200,
+    })
+    const url = lastCall(fetchFn)[0]
+    expect(url).toContain("/v1/db-snapshots/deltas/delta_9/changes")
+    expect(url).toContain("table=public.orders")
+    expect(url).toContain("limit=100")
+    expect(url).toContain("offset=200")
+  })
+
+  it("listChanges omits limit and offset when not provided", async () => {
+    const { talonic, fetchFn } = makeClient({ data: [], total: 0, limit: 50, offset: 0 })
+    await talonic.dbSnapshots.listChanges("delta_9", { table: "t" })
+    const url = lastCall(fetchFn)[0]
+    expect(url).toContain("table=t")
+    expect(url).not.toContain("limit=")
+    expect(url).not.toContain("offset=")
+  })
+
+  it("getEntityHistory -> GET /v1/db-snapshots/sources/:connectionId/history with table and pk", async () => {
+    const { talonic, fetchFn } = makeClient({
+      table_key: "public.orders",
+      pk: "42",
+      identity_columns: ["id"],
+      current: { id: 42, status: "shipped" },
+      events: [
+        {
+          delta_id: "delta_9",
+          snapshot_id: "snap_9",
+          captured_at: "2026-08-20T10:00:00.000Z",
+          change_type: "modified",
+          before: { status: "packed" },
+          after: { status: "shipped" },
+        },
+      ],
+    })
+    const history = await talonic.dbSnapshots.getEntityHistory("conn_1", {
+      table: "public.orders",
+      pk: "42",
+    })
+    const url = lastCall(fetchFn)[0]
+    expect(url).toContain("/v1/db-snapshots/sources/conn_1/history")
+    expect(url).toContain("table=public.orders")
+    expect(url).toContain("pk=42")
+    expect(history.events[0]?.change_type).toBe("modified")
+    expect(history.identity_columns).toEqual(["id"])
+  })
+})
