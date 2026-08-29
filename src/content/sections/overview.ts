@@ -5,9 +5,9 @@ export const sections: RawSection[] = [
     slug: "introduction",
     parentSlug: "overview",
     title: "Introduction",
-    seoTitle: "Node SDK Introduction — Talonic Docs",
+    seoTitle: "Talonic Node.js SDK Introduction — TypeScript Client Docs",
     description:
-      "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document.",
+      "Official Talonic SDK for Node.js and TypeScript: extract structured, schema-validated data from any document with typed resources, retries, and a CLI.",
     content: [
       {
         type: "paragraph",
@@ -19,7 +19,7 @@ export const sections: RawSection[] = [
       },
       {
         type: "paragraph",
-        text: "The client exposes resource objects for every API namespace: **documents**, **extractions**, **schemas**, **jobs**, **fields**, and **credits**. Each resource provides typed methods that return structured responses with rate-limit and cost metadata attached.",
+        text: "The client exposes resource objects for every API namespace: **documents**, **extractions**, **schemas**, **jobs**, **fields**, **credits**, **pricing**, and **usage**. Each resource provides typed methods that return structured responses with rate-limit and cost metadata attached.",
       },
       {
         type: "paragraph",
@@ -41,10 +41,19 @@ const talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })
 const result = await talonic.extract({
   file_path: './contract.pdf',
   schema: {
-    parties: [{ name: 'string', role: 'string' }],
-    effective_date: 'date',
-    termination_clause: 'string',
-    governing_law: 'string',
+    type: 'object',
+    properties: {
+      parties: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { name: { type: 'string' }, role: { type: 'string' } },
+        },
+      },
+      effective_date: { type: 'string', format: 'date' },
+      termination_clause: { type: 'string' },
+      governing_law: { type: 'string' },
+    },
   },
 })
 
@@ -86,7 +95,7 @@ console.log(\`\${balance.balance_credits} credits remaining (\${balance.projecte
     related: [
       { label: "Install", slug: "install" },
       { label: "Quick Start", slug: "quickstart" },
-      { label: "MCP Server", slug: "mcp-introduction" },
+      { label: "Extract", slug: "extract" },
     ],
     faq: [
       {
@@ -101,7 +110,7 @@ console.log(\`\${balance.balance_credits} credits remaining (\${balance.projecte
       {
         question: "What resources does the SDK expose?",
         answer:
-          "The client exposes documents, extractions, schemas, jobs, fields, and credits as typed resource objects. Each provides methods that map to the corresponding REST API endpoints.",
+          "The client exposes documents, extractions, schemas, jobs, fields, credits, pricing, and usage as typed resource objects. Each provides methods that map to the corresponding REST API endpoints.",
       },
       {
         question: "What file formats does the Talonic SDK support?",
@@ -125,12 +134,15 @@ console.log(\`\${balance.balance_credits} credits remaining (\${balance.projecte
     slug: "install",
     parentSlug: "overview",
     title: "Install",
-    seoTitle: "Install @talonic/node — Talonic Docs",
+    seoTitle: "Install @talonic/node — Talonic Node.js SDK Setup Guide",
     description:
-      "Install the official Talonic Node.js SDK via npm. Requires Node.js 18 or newer with zero runtime dependencies.",
+      "Install the official Talonic Node.js SDK with npm, yarn, pnpm, or bun. Requires Node.js 18+, ships ESM and CJS builds, and has zero runtime dependencies.",
     content: [
       { type: "code", language: "bash", code: "npm install @talonic/node" },
-      { type: "paragraph", text: "Requires Node.js 18 or newer. Zero runtime dependencies." },
+      {
+        type: "paragraph",
+        text: "The SDK requires Node.js 18 or newer and has zero runtime dependencies, so installing it adds exactly one package to your `node_modules`. There is nothing else to configure: no build step, no peer dependencies, and no native bindings. The published package includes the compiled JavaScript, TypeScript declaration files, and the `talonic` CLI binary.",
+      },
       {
         type: "paragraph",
         text: "The package works with npm, yarn, pnpm, and bun. It ships ESM and CJS builds with full TypeScript declarations, so it integrates cleanly into any modern Node.js project without additional configuration.",
@@ -154,12 +166,12 @@ bun add @talonic/node`,
       },
       {
         type: "paragraph",
-        text: "After installation the `talonic` CLI binary is available in your project. Run `npx talonic --help` to verify the install. The CLI mirrors the SDK's resource structure, so you can test your API key from the terminal before writing any code. If you installed globally with `npm install -g @talonic/node`, the `talonic` command is available directly without `npx`.",
+        text: "After installation the `talonic` CLI binary is available in your project. Run `npx talonic --help` to verify the install. The CLI covers the most common operations — extraction, schema listing, and document listing — so you can test your API key from the terminal before writing any code. If you installed globally with `npm install -g @talonic/node`, the `talonic` command is available directly without `npx`.",
       },
       { type: "heading", level: 3, id: "get-api-key", text: "Get an API key (30 seconds)" },
       {
         type: "paragraph",
-        text: "Every user runs against their own Talonic workspace. Your documents and schemas are private to you.",
+        text: "Every user runs against their own Talonic workspace, so each user needs their own key. Workspaces are fully isolated: the documents you upload, the schemas you create, and the extractions you run are private to your workspace and invisible to every other account. Keys carry the `tlnc_` prefix and authenticate every SDK and CLI call via a bearer header.",
       },
       {
         type: "list",
@@ -194,9 +206,9 @@ console.log(\`Connected! Balance: \${balance.balance_credits} credits (\${balanc
         code: `# Set your API key
 export TALONIC_API_KEY=tlnc_your_key_here
 
-# Test the connection
-npx talonic credits balance
-# { "balance_credits": 1888, "tier": "pro", ... }`,
+# Test the connection by listing your saved schemas
+npx talonic schemas list
+# { "data": [ ... ], "pagination": { ... }, ... }`,
       },
       {
         type: "callout",
@@ -226,7 +238,7 @@ npx talonic credits balance
       {
         question: "How do I verify my installation is working?",
         answer:
-          "After installing, create a Talonic client with your API key and call talonic.credits.getBalance(). If the call succeeds and returns your balance, the SDK is correctly installed and your key is valid. You can also run npx talonic credits balance from the terminal.",
+          "After installing, create a Talonic client with your API key and call talonic.credits.getBalance(). If the call succeeds and returns your balance, the SDK is correctly installed and your key is valid. From the terminal, run npx talonic schemas list as an equivalent smoke test.",
       },
     ],
     mentions: ["npm", "API key", "Node.js 18"],
@@ -235,9 +247,9 @@ npx talonic credits balance
     slug: "quickstart",
     parentSlug: "overview",
     title: "Quick Start",
-    seoTitle: "Quick Start — Talonic Node SDK",
+    seoTitle: "Quick Start — Extract Document Data with Talonic Node SDK",
     description:
-      "Extract structured data from a document in 5 lines of TypeScript using the Talonic SDK.",
+      "Extract structured data from a PDF in five lines of TypeScript: create a Talonic client, call extract() with a schema, and read typed, validated results.",
     content: [
       {
         type: "paragraph",
@@ -254,10 +266,13 @@ const talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })
 const result = await talonic.extract({
   file_path: './invoice.pdf',
   schema: {
-    vendor_name: 'string',
-    invoice_number: 'string',
-    total_amount: 'number',
-    due_date: 'date',
+    type: 'object',
+    properties: {
+      vendor_name: { type: 'string' },
+      invoice_number: { type: 'string' },
+      total_amount: { type: 'number' },
+      due_date: { type: 'string', format: 'date' },
+    },
   },
 })
 
@@ -266,7 +281,7 @@ console.log(result.data)
       },
       {
         type: "paragraph",
-        text: "The `result` object contains the extracted `data` matching your schema, plus `rateLimit` and `cost` metadata. The `data` fields are typed according to your schema definition, so `total_amount` comes back as a number and `due_date` as a date string.",
+        text: 'The `result` object contains the extracted `data` matching your schema, plus `rateLimit` and `cost` metadata. The `data` fields are typed according to your schema definition, so `total_amount` comes back as a number and `due_date` as a date string. Pass a full JSON Schema with `type: "object"` and `properties` for reliable results; when you omit the `required` array, the SDK auto-populates it from `properties` so the API cannot silently return `null` for fields you clearly intended to extract.',
       },
       {
         type: "paragraph",
@@ -280,11 +295,14 @@ console.log(result.data)
 const result = await talonic.extract({
   file_url: 'https://example.com/reports/q4-2025.pdf',
   schema: {
-    report_title: 'string',
-    period: 'string',
-    revenue: 'number',
-    net_income: 'number',
-    highlights: ['string'],
+    type: 'object',
+    properties: {
+      report_title: { type: 'string' },
+      period: { type: 'string' },
+      revenue: { type: 'number' },
+      net_income: { type: 'number' },
+      highlights: { type: 'array', items: { type: 'string' } },
+    },
   },
 })
 
@@ -308,10 +326,19 @@ try {
   const result = await talonic.extract({
     file_path: './receipt.png',
     schema: {
-      merchant: 'string',
-      date: 'date',
-      total: 'number',
-      items: [{ name: 'string', price: 'number' }],
+      type: 'object',
+      properties: {
+        merchant: { type: 'string' },
+        date: { type: 'string', format: 'date' },
+        total: { type: 'number' },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { name: { type: 'string' }, price: { type: 'number' } },
+          },
+        },
+      },
     },
   })
   console.log(\`Extracted \${result.data.items?.length ?? 0} line items from \${result.document.filename}\`)
