@@ -5,9 +5,9 @@ export const sections: RawSection[] = [
     slug: "current-limitations",
     parentSlug: "known-issues",
     title: "Current Limitations",
-    seoTitle: "Known Issues — Talonic Node SDK",
+    seoTitle: "Known Issues and Limitations — Talonic Node.js SDK Docs",
     description:
-      "Known issues and limitations in the current version of the Talonic Node SDK, including auto-discovery extract and schema format constraints.",
+      "Known issues and limitations in the current Talonic Node SDK: auto-discovery extraction failures, schema format constraints, and recommended workarounds.",
     content: [
       {
         type: "paragraph",

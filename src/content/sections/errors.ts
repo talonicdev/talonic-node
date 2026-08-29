@@ -5,9 +5,9 @@ export const sections: RawSection[] = [
     slug: "error-classes",
     parentSlug: "errors",
     title: "Error Classes",
-    seoTitle: "Error Classes — Talonic Node SDK",
+    seoTitle: "Error Classes — Talonic Node SDK Typed Error Reference",
     description:
-      "Every Talonic SDK failure is a typed TalonicError subclass with status, code, and requestId for debugging.",
+      "Every Talonic SDK failure is a typed TalonicError subclass carrying status, code, retryable, and requestId, mapped from HTTP statuses and transport faults.",
     content: [
       {
         type: "paragraph",
@@ -131,9 +131,9 @@ try {
     slug: "error-handling",
     parentSlug: "errors",
     title: "Error Handling",
-    seoTitle: "Error Handling — Talonic Node SDK",
+    seoTitle: "Error Handling Patterns — Talonic Node.js SDK Guide",
     description:
-      "Pattern for catching and handling Talonic SDK errors with instanceof checks and rate limit metadata.",
+      "Practical patterns for catching Talonic SDK errors: ordered instanceof checks, structured logging, rate-limit-aware retries, and batch pipeline recovery.",
     content: [
       {
         type: "paragraph",
