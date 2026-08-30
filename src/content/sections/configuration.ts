@@ -5,9 +5,9 @@ export const sections: RawSection[] = [
     slug: "client-options",
     parentSlug: "configuration",
     title: "Client Options",
-    seoTitle: "Configuration — Talonic Node SDK",
+    seoTitle: "Client Configuration Options — Talonic Node.js SDK Docs",
     description:
-      "Configure the Talonic client with API key, base URL, timeout, retries, and custom fetch.",
+      "Configure the Talonic client constructor: apiKey, baseUrl, timeout, maxRetries, and a custom fetch implementation for testing, proxies, and polyfills.",
     content: [
       {
         type: "paragraph",
@@ -162,9 +162,9 @@ const devClient = new Talonic({
     slug: "retries",
     parentSlug: "configuration",
     title: "Retries & Backoff",
-    seoTitle: "Retries & Backoff — Talonic Node SDK",
+    seoTitle: "Retries and Backoff — Talonic Node SDK Reliability Guide",
     description:
-      "How the Talonic SDK handles automatic retries with exponential backoff and jitter for transient failures.",
+      "How the Talonic SDK retries 429s, 5xx responses, network errors, and timeouts with exponential backoff, jitter, and X-RateLimit-Reset-aware wait times.",
     content: [
       {
         type: "paragraph",

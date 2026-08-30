@@ -20,6 +20,7 @@ export const SDK_NAV_SECTIONS: NavSection[] = [
       { id: "extractions", label: "Extractions" },
       { id: "schemas", label: "Schemas" },
       { id: "jobs", label: "Jobs" },
+      { id: "credits", label: "Credits" },
     ],
   },
   {

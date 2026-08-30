@@ -56,7 +56,7 @@ console.log(result.rateLimit)
 // { limit, remaining, resetAt }   — parsed from X-RateLimit-* headers
 ```
 
-Pass full JSON Schema with `type: "object"` and `properties` for reliable results. The SDK auto-populates `required` from `properties` when omitted, so you cannot accidentally end up with the silent-empty-data footgun where the API returns `null` for fields you intended to extract. Pass `include_provenance: true` to also receive per-field source evidence (page, section, source text).
+Pass full JSON Schema with `type: "object"` and `properties` for reliable results. The SDK auto-populates `required` from `properties` when omitted, so you cannot accidentally end up with the silent-empty-data footgun where the API returns `null` for fields you intended to extract. Pass `include_markdown: true` to also receive the raw OCR markdown the extraction engine worked from.
 
 ## API surface
 
