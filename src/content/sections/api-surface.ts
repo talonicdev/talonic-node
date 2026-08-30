@@ -5,9 +5,9 @@ export const sections: RawSection[] = [
     slug: "extract",
     parentSlug: "api-surface",
     title: "Extract",
-    seoTitle: "Extract Method — Talonic Node SDK",
+    seoTitle: "extract() Method — Talonic Node SDK Document Extraction",
     description:
-      "Top-level extract method: send a document and schema, receive structured validated data with confidence scores.",
+      "Call talonic.extract() with a file and JSON Schema to receive structured, validated data plus confidence scores and per-call cost metadata in one await.",
     content: [
       {
         type: "paragraph",
@@ -20,14 +20,23 @@ export const sections: RawSection[] = [
         code: `const result = await talonic.extract({
   file_path: './invoice.pdf',
   schema: {
-    vendor_name: 'string',
-    invoice_number: 'string',
-    total_amount: 'number',
-    line_items: [{
-      description: 'string',
-      quantity: 'number',
-      unit_price: 'number',
-    }],
+    type: 'object',
+    properties: {
+      vendor_name: { type: 'string' },
+      invoice_number: { type: 'string' },
+      total_amount: { type: 'number' },
+      line_items: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            description: { type: 'string' },
+            quantity: { type: 'number' },
+            unit_price: { type: 'number' },
+          },
+        },
+      },
+    },
   },
 })
 
@@ -85,10 +94,13 @@ const result = await talonic.extract({
   filename: 'scan.tiff',
   content_type: 'image/tiff',
   schema: {
-    patient_name: 'string',
-    date_of_service: 'date',
-    diagnosis_codes: ['string'],
-    total_charges: 'number',
+    type: 'object',
+    properties: {
+      patient_name: { type: 'string' },
+      date_of_service: { type: 'string', format: 'date' },
+      diagnosis_codes: { type: 'array', items: { type: 'string' } },
+      total_charges: { type: 'number' },
+    },
   },
 })
 
@@ -152,9 +164,9 @@ console.log(result.document.language_detected) // 'en'`,
     slug: "documents",
     parentSlug: "api-surface",
     title: "Documents",
-    seoTitle: "Documents API — Talonic Node SDK",
+    seoTitle: "Documents Resource — Talonic Node SDK API Reference",
     description:
-      "List, retrieve, get markdown, re-extract, and delete documents in your Talonic workspace.",
+      "List, retrieve, filter, re-extract, and delete workspace documents with talonic.documents, including OCR markdown retrieval and cursor-based pagination.",
     content: [
       {
         type: "paragraph",
@@ -268,9 +280,9 @@ console.log(deleted.deleted) // true`,
     slug: "extractions",
     parentSlug: "api-surface",
     title: "Extractions",
-    seoTitle: "Extractions API — Talonic Node SDK",
+    seoTitle: "Extractions Resource — Talonic Node SDK API Reference",
     description:
-      "Query extraction results, retrieve structured data in JSON or CSV, and submit field corrections.",
+      "Query extraction results with talonic.extractions: list runs, fetch structured data as JSON or CSV, and patch field values with audited human corrections.",
     content: [
       {
         type: "paragraph",
@@ -394,9 +406,9 @@ await talonic.extractions.patch('ext_xyz789', {
     slug: "schemas",
     parentSlug: "api-surface",
     title: "Schemas",
-    seoTitle: "Schemas API — Talonic Node SDK",
+    seoTitle: "Schemas Resource — Talonic Node.js SDK API Reference",
     description:
-      "Create, update, and manage reusable extraction schemas for consistent document structuring.",
+      "Create, list, update, and delete reusable JSON Schema extraction definitions with talonic.schemas for consistent structured output across all documents.",
     content: [
       {
         type: "paragraph",
@@ -543,8 +555,9 @@ console.log(schema.links)        // { self: '...', extractions: '...', dashboard
     slug: "jobs",
     parentSlug: "api-surface",
     title: "Jobs",
-    seoTitle: "Jobs API — Talonic Node SDK",
-    description: "Create and track asynchronous batch extraction jobs across multiple documents.",
+    seoTitle: "Batch Jobs Resource — Talonic Node SDK API Reference",
+    description:
+      "Run asynchronous batch extraction with talonic.jobs: create jobs from document sets, poll live progress, retrieve structured results, and cancel safely.",
     content: [
       {
         type: "paragraph",
@@ -671,7 +684,7 @@ console.log(\`Retrieved \${partial.data.length} results before cancellation\`)`,
     slug: "credits",
     parentSlug: "api-surface",
     title: "Credits",
-    seoTitle: "Credits API — Talonic Node SDK",
+    seoTitle: "Credits and Cost Tracking — Talonic Node SDK Reference",
     description:
       "Read the workspace credit balance, EUR value, 30-day burn rate, projected runway, tier, and next monthly tier-reset timestamp from the Talonic Node SDK.",
     content: [
@@ -771,10 +784,14 @@ if (balance.projected_runway_days === -1) {
   console.log('No consumption in the trailing 30 days — runway cannot be projected')
 }`,
       },
+      {
+        type: "callout",
+        text: "The `getBalance()` call is read-only and never consumes credits, so it is safe to poll before every batch. For per-call spend, prefer the `cost` block already attached to each `extract()` response over an extra balance request.",
+      },
     ],
     related: [
       { label: "Extract", slug: "extract" },
-      { label: "Errors", slug: "errors" },
+      { label: "Error Classes", slug: "error-classes" },
     ],
     faq: [
       {
