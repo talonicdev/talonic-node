@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-08-29
+
+### Changed
+
+- Documentation quality pass across both docs surfaces (`docs/sections.json`, which feeds talonic.com/docs/sdk, and `src/content/sections/*`), addressing the 2026-08-29 site audit:
+  - Six rendered sections that were bare code blocks (`sdk-quickstart`, `sdk-configuration`, `sdk-documents`, `sdk-extractions`, `sdk-schemas`, `sdk-jobs`) now carry full prose, response-shape examples, FAQs, and callouts.
+  - All 10 cross-domain `related[]` links that 404ed as `/docs/sdk/<slug>` removed or repointed to real SDK slugs; cross-repo pointers now live in prose as full URLs.
+  - `seoTitle` values lengthened to 50–60 chars and `description` values to 150–160 chars, unique per page.
+  - CLI docs corrected to the actual command surface (`extract`, `schemas list/get`, `documents list/get`); previously documented commands such as `jobs create`, `extractions data --format=csv`, and `credits balance` do not exist in the binary.
+  - Extract/quickstart examples switched from the flat key-type schema shorthand to full JSON Schema, matching the server-side normaliser limitation tracked in Known Issues.
+  - `credits` section added to the SDK nav (was unreachable) and its dangling `errors` related link repointed to `error-classes`.
+
 ## [0.1.15] - 2026-05-08
 
 ### Changed
