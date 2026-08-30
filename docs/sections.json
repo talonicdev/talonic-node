@@ -3,259 +3,1260 @@
     "slug": "sdk-introduction",
     "parentSlug": "sdk-overview",
     "title": "Introduction",
-    "seoTitle": "Node SDK Introduction — Talonic Docs",
-    "description": "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document with a single function call.",
+    "seoTitle": "Talonic Node.js SDK Introduction — TypeScript Client Docs",
+    "description": "Official Talonic SDK for Node.js and TypeScript: extract structured, schema-validated data from any document with typed resources, retries, and a CLI.",
     "content": [
-      { "type": "paragraph", "text": "The `@talonic/node` SDK is the official Node.js and TypeScript client for the Talonic API. Extract structured, schema-validated data from any document with a single function call." },
-      { "type": "paragraph", "text": "Zero runtime dependencies. Requires Node.js 18 or newer." },
-      { "type": "callout", "text": "Looking for the AI agent path? [`@talonic/mcp`](https://github.com/talonicdev/talonic-mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly." }
+      {
+        "type": "paragraph",
+        "text": "Official Talonic SDK for Node.js and TypeScript. Extract structured, schema-validated data from any document."
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK wraps the [Talonic REST API](https://talonic.com/docs/api) with a typed client, automatic retries, structured errors, and a CLI. Zero runtime dependencies."
+      },
+      {
+        "type": "paragraph",
+        "text": "The client exposes resource objects for every API namespace: **documents**, **extractions**, **schemas**, **jobs**, **fields**, **credits**, **pricing**, and **usage**. Each resource provides typed methods that return structured responses with rate-limit and cost metadata attached."
+      },
+      {
+        "type": "paragraph",
+        "text": "Every HTTP call goes through a shared transport layer that handles authentication, retries with exponential backoff, timeout enforcement, and error mapping. You configure these behaviors once in the constructor and every method call inherits them."
+      },
+      {
+        "type": "paragraph",
+        "text": "The top-level `extract()` method is the fastest path from document to structured data. Pass a local file path, a remote URL, in-memory bytes, or a previously uploaded `document_id` alongside an inline schema or a saved `schema_id`. The SDK reads the file, uploads it as multipart form data, and returns typed JSON in a single await. Every response also carries `rateLimit` and `cost` metadata parsed from response headers, so you can build budget-aware pipelines without extra API calls."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Create a client and extract",
+        "code": "import { Talonic } from '@talonic/node'\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\n// Extract structured data from a local PDF\nconst result = await talonic.extract({\n  file_path: './contract.pdf',\n  schema: {\n    type: 'object',\n    properties: {\n      parties: {\n        type: 'array',\n        items: {\n          type: 'object',\n          properties: { name: { type: 'string' }, role: { type: 'string' } },\n        },\n      },\n      effective_date: { type: 'string', format: 'date' },\n      termination_clause: { type: 'string' },\n      governing_law: { type: 'string' },\n    },\n  },\n})\n\nconsole.log(result.data)\n// { parties: [{ name: 'Acme Corp', role: 'Licensor' }, ...], effective_date: '2025-01-15', ... }\nconsole.log(result.cost)\n// { costCredits: 8, costEur: 0.04, balanceCredits: 1892, ... }"
+      },
+      {
+        "type": "paragraph",
+        "text": "Beyond extraction, the SDK provides full CRUD access to your workspace. Use `talonic.documents` to list, inspect, re-extract, filter, and delete uploaded files. Use `talonic.schemas` to create and manage reusable extraction definitions that keep your output consistent across calls and team members. Use `talonic.jobs` for asynchronous batch extraction across many documents, and `talonic.credits.getBalance()` to monitor your workspace credit balance, burn rate, and projected runway."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Explore your workspace",
+        "code": "// List all documents in your workspace\nconst docs = await talonic.documents.list({ limit: 10 })\nconsole.log(docs.data.map(d => d.filename))\n\n// Search across documents, fields, sources, and schemas\nconst hits = await talonic.search('indemnification clause')\nconsole.log(hits.documents)\nconsole.log(hits.fieldMatches)\n\n// Check your credit balance\nconst balance = await talonic.credits.getBalance()\nconsole.log(`${balance.balance_credits} credits remaining (${balance.projected_runway_days} days runway)`)"
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK ships both ESM and CJS builds with full TypeScript declarations, so it integrates cleanly into any modern Node.js project. Every error is a typed `TalonicError` subclass with `status`, `code`, and `requestId` properties, making it straightforward to handle failures in a structured way. The global `search()` method lets you query across documents, fields, sources, and schemas in a single call, useful for building search interfaces or validating that data exists before running an extraction."
+      },
+      {
+        "type": "callout",
+        "text": "**Looking for the AI agent path?** [`@talonic/mcp`](https://talonic.com/docs/mcp) wraps this SDK as a Model Context Protocol server. Install it into Claude Desktop, Cursor, Cline, Continue, or Cowork and any MCP-aware agent can extract documents directly."
+      }
     ],
     "related": [
-      { "label": "Installation", "slug": "sdk-installation" },
-      { "label": "Quick Start", "slug": "sdk-quickstart" },
-      { "label": "MCP Server", "slug": "mcp-introduction" }
+      {
+        "label": "Installation",
+        "slug": "sdk-installation"
+      },
+      {
+        "label": "Quick Start",
+        "slug": "sdk-quickstart"
+      },
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      }
     ],
     "faq": [
-      { "question": "What is the Talonic Node SDK?", "answer": "The official Node.js and TypeScript client for extracting structured, schema-validated data from documents via the Talonic API." },
-      { "question": "What Node.js version is required?", "answer": "Node.js 18 or newer. The SDK has zero runtime dependencies." }
+      {
+        "question": "What is @talonic/node?",
+        "answer": "The official Talonic SDK for Node.js and TypeScript. It extracts structured, schema-validated data from any document with a typed client, automatic retries, and structured errors."
+      },
+      {
+        "question": "Does the Talonic SDK have dependencies?",
+        "answer": "No. @talonic/node has zero runtime dependencies and requires Node.js 18 or newer."
+      },
+      {
+        "question": "What resources does the SDK expose?",
+        "answer": "The client exposes documents, extractions, schemas, jobs, fields, credits, pricing, and usage as typed resource objects. Each provides methods that map to the corresponding REST API endpoints."
+      },
+      {
+        "question": "What file formats does the Talonic SDK support?",
+        "answer": "The SDK supports PDF, PNG, JPG, TIFF, WebP, BMP, GIF, DOCX, DOC, XLSX, XLS, PPTX, PPT, TXT, Markdown, CSV, TSV, JSON, XML, HTML, EML, MSG, and ZIP files. MIME types are inferred from the file extension, or you can set content_type explicitly."
+      },
+      {
+        "question": "Does the SDK include a search method?",
+        "answer": "Yes. The top-level talonic.search() method runs a global omnisearch across documents, fields, sources, and schemas. It returns categorized hits for each entity type and accepts an optional limit parameter to control results per type."
+      },
+      {
+        "question": "How does the SDK handle rate limiting and costs?",
+        "answer": "Every response includes rateLimit metadata (limit, remaining, resetAt) parsed from X-RateLimit-* headers. Extract responses also carry cost metadata (costCredits, costEur, balanceCredits) parsed from X-Talonic-Cost-* headers. The SDK retries 429 rate-limit responses automatically, respecting the server-provided reset timestamp."
+      }
     ],
-    "mentions": ["Node.js", "TypeScript", "SDK", "npm", "document extraction"]
+    "mentions": [
+      "Node.js",
+      "TypeScript",
+      "SDK",
+      "document extraction"
+    ]
   },
   {
     "slug": "sdk-installation",
     "parentSlug": "sdk-overview",
     "title": "Installation",
-    "seoTitle": "Install Talonic Node SDK — Talonic Docs",
-    "description": "Install the @talonic/node package via npm. Zero runtime dependencies, requires Node.js 18+.",
+    "seoTitle": "Install @talonic/node — Talonic Node.js SDK Setup Guide",
+    "description": "Install the official Talonic Node.js SDK with npm, yarn, pnpm, or bun. Requires Node.js 18+, ships ESM and CJS builds, and has zero runtime dependencies.",
     "content": [
-      { "type": "code", "language": "bash", "title": "Install via npm", "code": "npm install @talonic/node" },
-      { "type": "paragraph", "text": "Requires Node.js 18 or newer. Zero runtime dependencies." }
+      {
+        "type": "code",
+        "language": "bash",
+        "code": "npm install @talonic/node"
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK requires Node.js 18 or newer and has zero runtime dependencies, so installing it adds exactly one package to your `node_modules`. There is nothing else to configure: no build step, no peer dependencies, and no native bindings. The published package includes the compiled JavaScript, TypeScript declaration files, and the `talonic` CLI binary."
+      },
+      {
+        "type": "paragraph",
+        "text": "The package works with npm, yarn, pnpm, and bun. It ships ESM and CJS builds with full TypeScript declarations, so it integrates cleanly into any modern Node.js project without additional configuration."
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK relies on the built-in `fetch` available in Node.js 18+. If you are running an older Node.js version, pass a fetch polyfill (such as `node-fetch`) via the `fetch` constructor option."
+      },
+      {
+        "type": "code",
+        "language": "bash",
+        "title": "Install with other package managers",
+        "code": "# yarn\nyarn add @talonic/node\n\n# pnpm\npnpm add @talonic/node\n\n# bun\nbun add @talonic/node"
+      },
+      {
+        "type": "paragraph",
+        "text": "After installation the `talonic` CLI binary is available in your project. Run `npx talonic --help` to verify the install. The CLI covers the most common operations — extraction, schema listing, and document listing — so you can test your API key from the terminal before writing any code. If you installed globally with `npm install -g @talonic/node`, the `talonic` command is available directly without `npx`."
+      },
+      {
+        "type": "heading",
+        "level": 3,
+        "id": "get-api-key",
+        "text": "Get an API key (30 seconds)"
+      },
+      {
+        "type": "paragraph",
+        "text": "Every user runs against their own Talonic workspace, so each user needs their own key. Workspaces are fully isolated: the documents you upload, the schemas you create, and the extractions you run are private to your workspace and invisible to every other account. Keys carry the `tlnc_` prefix and authenticate every SDK and CLI call via a bearer header."
+      },
+      {
+        "type": "list",
+        "ordered": true,
+        "items": [
+          "Sign up at [app.talonic.com](https://app.talonic.com). Free tier: 50 extractions per day, no credit card.",
+          "Settings → API Keys → Create New Key.",
+          "Copy the `tlnc_` value.",
+          "Set it as the `TALONIC_API_KEY` environment variable, or pass it directly to the client constructor."
+        ]
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Verify your installation",
+        "code": "import { Talonic } from '@talonic/node'\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\n// Quick smoke test: check your credit balance\nconst balance = await talonic.credits.getBalance()\nconsole.log(`Connected! Balance: ${balance.balance_credits} credits (${balance.tier} tier)`)"
+      },
+      {
+        "type": "paragraph",
+        "text": "The constructor validates that the `apiKey` is a non-empty string and that a `fetch` implementation is available. It throws a `TypeError` immediately if either check fails, so you will catch configuration problems at startup rather than on the first API call. The SDK does not validate the `tlnc_` prefix or contact the server during construction; authentication errors surface on the first actual request as a `TalonicAuthError` with status 401 or 403."
+      },
+      {
+        "type": "code",
+        "language": "bash",
+        "title": "Verify from the terminal",
+        "code": "# Set your API key\nexport TALONIC_API_KEY=tlnc_your_key_here\n\n# Test the connection by listing your saved schemas\nnpx talonic schemas list\n# { \"data\": [ ... ], \"pagination\": { ... }, ... }"
+      },
+      {
+        "type": "callout",
+        "text": "Store your API key in an environment variable or secrets manager. Never commit `tlnc_` values to version control."
+      }
     ],
     "related": [
-      { "label": "Authentication", "slug": "sdk-authentication" },
-      { "label": "Quick Start", "slug": "sdk-quickstart" }
+      {
+        "label": "Authentication",
+        "slug": "sdk-authentication"
+      },
+      {
+        "label": "Quick Start",
+        "slug": "sdk-quickstart"
+      }
     ],
     "faq": [
-      { "question": "How do I install the Talonic Node SDK?", "answer": "Run npm install @talonic/node. Requires Node.js 18 or newer. Zero runtime dependencies." }
+      {
+        "question": "How do I install the Talonic SDK?",
+        "answer": "Run npm install @talonic/node. Requires Node.js 18+ with zero runtime dependencies. Also works with yarn, pnpm, and bun."
+      },
+      {
+        "question": "How do I get a Talonic API key?",
+        "answer": "Sign up at app.talonic.com (free tier, no credit card), then go to Settings > API Keys > Create New Key. Keys use the tlnc_ prefix."
+      },
+      {
+        "question": "Does the SDK ship ESM and CJS builds?",
+        "answer": "Yes. The package includes both ESM and CJS builds with full TypeScript declarations. It integrates into any modern Node.js project without additional bundler configuration, and the types are auto-discovered by TypeScript without manual setup."
+      },
+      {
+        "question": "How do I verify my installation is working?",
+        "answer": "After installing, create a Talonic client with your API key and call talonic.credits.getBalance(). If the call succeeds and returns your balance, the SDK is correctly installed and your key is valid. From the terminal, run npx talonic schemas list as an equivalent smoke test."
+      }
     ],
-    "mentions": ["npm", "Node.js"]
+    "mentions": [
+      "npm",
+      "API key",
+      "Node.js 18"
+    ]
   },
   {
     "slug": "sdk-authentication",
     "parentSlug": "sdk-overview",
     "title": "Authentication",
-    "seoTitle": "SDK Authentication — Talonic Docs",
-    "description": "Get a Talonic API key and configure it for the Node SDK. Each workspace is isolated with private documents and schemas.",
+    "seoTitle": "API Key Authentication — Talonic Node.js SDK Setup Docs",
+    "description": "Create a Talonic API key at app.talonic.com and authenticate the Node SDK via the TALONIC_API_KEY environment variable or the apiKey constructor option.",
     "content": [
-      { "type": "paragraph", "text": "Every user runs against their own Talonic workspace, so each user needs their own key. Workspaces are isolated; your documents and schemas are private to you." },
-      { "type": "list", "ordered": true, "items": [
-        "Sign up at [https://app.talonic.com](https://app.talonic.com). Free tier: 50 extractions per day, no credit card.",
-        "Settings &rarr; API Keys &rarr; Create New Key.",
-        "Copy the `tlnc_` value.",
-        "Set it as the `TALONIC_API_KEY` environment variable, or pass it directly to the client constructor."
-      ]},
-      { "type": "callout", "text": "Keep your API key secret. Do not expose it in client-side code or version control." }
+      {
+        "type": "paragraph",
+        "text": "Every request the SDK makes is authenticated with a workspace API key. Keys carry the `tlnc_` prefix and are sent as an `Authorization: Bearer` header on every HTTP call, so you never handle raw headers yourself. Each user runs against their own Talonic workspace: the documents you upload, the schemas you create, and the extractions you run are private to your workspace and invisible to every other account."
+      },
+      {
+        "type": "paragraph",
+        "text": "Getting a key takes about thirty seconds. Sign up at [app.talonic.com](https://app.talonic.com) — the free tier includes 50 extractions per day with no credit card — then open Settings → API Keys → Create New Key and copy the `tlnc_` value. Set it as the `TALONIC_API_KEY` environment variable, or pass it directly to the client constructor via the `apiKey` option if your deployment injects secrets differently."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Authenticate the client",
+        "code": "import { Talonic } from '@talonic/node'\n\n// Recommended: read the key from the environment\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\n// The same key also powers the bundled CLI:\n//   export TALONIC_API_KEY=tlnc_your_key_here\n//   npx talonic schemas list"
+      },
+      {
+        "type": "paragraph",
+        "text": "The constructor validates that `apiKey` is a non-empty string and throws a `TypeError` immediately if it is missing, so misconfiguration surfaces at startup rather than mid-pipeline. It does not contact the server or validate the `tlnc_` prefix during construction: an invalid or revoked key surfaces on the first real request as a `TalonicAuthError` with status 401, and a key lacking permission for an operation surfaces as the same class with status 403."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Handle authentication failures",
+        "code": "import { Talonic, TalonicAuthError } from '@talonic/node'\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\ntry {\n  const schemas = await talonic.schemas.list()\n  console.log(`Authenticated — ${schemas.data.length} schemas visible`)\n} catch (err) {\n  if (err instanceof TalonicAuthError) {\n    // 401: key missing/invalid/revoked; 403: insufficient permissions\n    console.error(`Auth failed (status ${err.status}): ${err.message}`)\n    process.exit(1)\n  }\n  throw err\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "Authentication errors are never retried: the SDK throws `TalonicAuthError` on the first 401 or 403 response regardless of the `maxRetries` setting, because retrying a bad credential cannot succeed. That makes a cheap read-only call such as `talonic.schemas.list()` a good startup health check — it verifies the key, the network path, and the base URL in one request without consuming any credits."
+      },
+      {
+        "type": "callout",
+        "variant": "warning",
+        "text": "Treat `tlnc_` keys like passwords: store them in environment variables or a secrets manager, never commit them to version control, and rotate them from the dashboard (Settings → API Keys) if one leaks. The CLI deliberately has no `--api-key` flag so keys stay out of shell history."
+      }
     ],
     "related": [
-      { "label": "Configuration", "slug": "sdk-configuration" },
-      { "label": "API Authentication", "slug": "authentication" }
+      {
+        "label": "Configuration",
+        "slug": "sdk-configuration"
+      },
+      {
+        "label": "Quick Start",
+        "slug": "sdk-quickstart"
+      },
+      {
+        "label": "Error Classes",
+        "slug": "sdk-error-classes"
+      }
     ],
     "faq": [
-      { "question": "Where do I get a Talonic API key?", "answer": "Sign up at app.talonic.com, go to Settings → API Keys → Create New Key. Free tier includes 50 extractions per day." }
+      {
+        "question": "How do I get a Talonic API key?",
+        "answer": "Sign up at app.talonic.com (the free tier includes 50 extractions per day, no credit card), then go to Settings > API Keys > Create New Key and copy the tlnc_ value. Set it as TALONIC_API_KEY or pass it to the constructor as apiKey."
+      },
+      {
+        "question": "Does the SDK validate my API key when I create the client?",
+        "answer": "No. The constructor only checks that apiKey is a non-empty string; it makes no network calls. An invalid key surfaces on the first request as a TalonicAuthError with status 401, and insufficient permissions surface as status 403."
+      },
+      {
+        "question": "Are API keys shared across a workspace?",
+        "answer": "Keys belong to a workspace, and workspaces are fully isolated from each other. Anyone with a key for a workspace sees that workspace's documents, schemas, and extractions — so issue separate keys per environment and rotate them from the dashboard when needed."
+      },
+      {
+        "question": "Are authentication failures retried?",
+        "answer": "No. 401 and 403 responses are non-retryable: the SDK throws TalonicAuthError immediately regardless of maxRetries, because retrying a bad credential cannot succeed. Fix or rotate the key and retry the call yourself."
+      }
     ],
-    "mentions": ["API key", "authentication", "workspace"]
+    "mentions": [
+      "API key",
+      "TALONIC_API_KEY",
+      "tlnc_",
+      "authentication",
+      "workspace"
+    ]
   },
   {
     "slug": "sdk-quickstart",
     "parentSlug": "sdk-overview",
     "title": "Quick Start",
-    "seoTitle": "Node SDK Quick Start — Talonic Docs",
-    "description": "Extract structured data from a document in five lines of TypeScript using the Talonic Node SDK.",
+    "seoTitle": "Quick Start — Extract Document Data with Talonic Node SDK",
+    "description": "Extract structured data from a PDF in five lines of TypeScript: create a Talonic client, call extract() with a schema, and read typed, validated results.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Extract an invoice", "code": "import { Talonic } from \"@talonic/node\"\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\nconst result = await talonic.extract({\n  file_path: \"./invoice.pdf\",\n  schema: {\n    vendor_name: \"string\",\n    invoice_number: \"string\",\n    total_amount: \"number\",\n    due_date: \"date\",\n  },\n})\n\nconsole.log(result.data)\n// { vendor_name: \"Acme Corp\", invoice_number: \"INV-2024-0847\", total_amount: 14250, due_date: \"2024-03-15\" }" }
+      {
+        "type": "paragraph",
+        "text": "Extract structured data from a document in five lines. Create a client, call **extract()** with a file and schema, and read the typed result."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract an invoice",
+        "code": "import { Talonic } from '@talonic/node'\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\nconst result = await talonic.extract({\n  file_path: './invoice.pdf',\n  schema: {\n    type: 'object',\n    properties: {\n      vendor_name: { type: 'string' },\n      invoice_number: { type: 'string' },\n      total_amount: { type: 'number' },\n      due_date: { type: 'string', format: 'date' },\n    },\n  },\n})\n\nconsole.log(result.data)\n// { vendor_name: 'Acme Corp', invoice_number: 'INV-2024-0847', total_amount: 14250, due_date: '2024-03-15' }"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `result` object contains the extracted `data` matching your schema, plus `rateLimit` and `cost` metadata. The `data` fields are typed according to your schema definition, so `total_amount` comes back as a number and `due_date` as a date string. Pass a full JSON Schema with `type: \"object\"` and `properties` for reliable results; when you omit the `required` array, the SDK auto-populates it from `properties` so the API cannot silently return `null` for fields you clearly intended to extract."
+      },
+      {
+        "type": "paragraph",
+        "text": "You can also pass `file_url` for remote files or `file` with `filename` for in-memory bytes (Blob, Buffer, or Uint8Array). For documents already uploaded to your workspace, pass `document_id` to skip the upload step entirely. The SDK accepts exactly one file source per call and validates this at runtime, throwing a `TalonicError` with code `missing_file_source` or `multiple_file_sources` if the constraint is violated."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract from a URL",
+        "code": "// Extract from a remote file — no local download needed\nconst result = await talonic.extract({\n  file_url: 'https://example.com/reports/q4-2025.pdf',\n  schema: {\n    type: 'object',\n    properties: {\n      report_title: { type: 'string' },\n      period: { type: 'string' },\n      revenue: { type: 'number' },\n      net_income: { type: 'number' },\n      highlights: { type: 'array', items: { type: 'string' } },\n    },\n  },\n})\n\nconsole.log(result.data.revenue)       // 4250000\nconsole.log(result.confidence?.overall) // 0.94\nconsole.log(result.document.pages)      // 12"
+      },
+      {
+        "type": "paragraph",
+        "text": "All **extract()** calls are async and return a `Promise`. The SDK handles retries, timeouts, and error mapping automatically, so you only need a single `try/catch` around your call for error handling. Retryable failures (429, 5xx, network errors, timeouts) are retried up to `maxRetries` times with exponential backoff, so transient hiccups do not require manual retry logic."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract with error handling",
+        "code": "import { Talonic, TalonicAuthError, TalonicValidationError, TalonicError } from '@talonic/node'\n\nconst talonic = new Talonic({ apiKey: process.env.TALONIC_API_KEY! })\n\ntry {\n  const result = await talonic.extract({\n    file_path: './receipt.png',\n    schema: {\n      type: 'object',\n      properties: {\n        merchant: { type: 'string' },\n        date: { type: 'string', format: 'date' },\n        total: { type: 'number' },\n        items: {\n          type: 'array',\n          items: {\n            type: 'object',\n            properties: { name: { type: 'string' }, price: { type: 'number' } },\n          },\n        },\n      },\n    },\n  })\n  console.log(`Extracted ${result.data.items?.length ?? 0} line items from ${result.document.filename}`)\n  console.log(`Cost: ${result.cost?.costCredits} credits, balance: ${result.cost?.balanceCredits}`)\n} catch (err) {\n  if (err instanceof TalonicAuthError) {\n    console.error('Invalid API key — check TALONIC_API_KEY')\n  } else if (err instanceof TalonicValidationError) {\n    console.error(`Bad request: ${err.message} (code: ${err.code})`)\n  } else if (err instanceof TalonicError) {\n    console.error(`Talonic error: ${err.code} (status ${err.status}, request ${err.requestId})`)\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `extract()` response includes rich metadata beyond the extracted data. The `document` block contains the filename, page count, file size, detected MIME type, and detected language. The optional `confidence` block provides an overall confidence score and per-field scores. The `processing` block reports duration, pages processed, and the region that handled the request. Use these fields to build quality gates and observability into your extraction pipeline."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Re-extract a previously uploaded document with a saved schema",
+        "code": "// Use document_id + schema_id to re-extract without re-uploading\nconst result = await talonic.extract({\n  document_id: 'doc_abc123',\n  schema_id: 'sch_def456',\n  instructions: 'Focus on the indemnification and liability sections',\n  include_markdown: true,\n})\n\nconsole.log(result.data)       // structured extraction\nconsole.log(result.markdown)   // raw OCR markdown (when include_markdown is true)\nconsole.log(result.schema)     // { source: 'saved', id: 'sch_def456', definition: { ... } }"
+      },
+      {
+        "type": "callout",
+        "text": "This example uses top-level `await`. If your environment does not support it, wrap the code in an `async` function."
+      }
     ],
     "related": [
-      { "label": "Extract", "slug": "sdk-extract" },
-      { "label": "Configuration", "slug": "sdk-configuration" },
-      { "label": "Schemas", "slug": "sdk-schemas" }
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Schemas",
+        "slug": "sdk-schemas"
+      },
+      {
+        "label": "Configuration",
+        "slug": "sdk-configuration"
+      }
     ],
     "faq": [
-      { "question": "How do I extract data from a document with the SDK?", "answer": "Call talonic.extract() with a file_path and a schema defining the fields you want. Returns structured JSON with confidence scores." }
+      {
+        "question": "How do I extract data from a PDF with the Talonic SDK?",
+        "answer": "Import Talonic, create a client with your API key, and call talonic.extract() with a file path and schema. The result contains structured, schema-validated JSON."
+      },
+      {
+        "question": "What does the extract result contain?",
+        "answer": "The result includes a data object with fields matching your schema, plus rateLimit (limit, remaining, resetAt) and cost (credits consumed, EUR value, post-call balance) metadata. It also contains document metadata (filename, pages, size_bytes, mime_type), optional confidence scores (overall and per-field), and processing info (duration_ms, region)."
+      },
+      {
+        "question": "Can I extract from a URL instead of a local file?",
+        "answer": "Yes. Pass file_url instead of file_path to extract from a remote document. The SDK fetches the file server-side, so you do not need to download it first."
+      },
+      {
+        "question": "Can I pass natural-language instructions to guide extraction?",
+        "answer": "Yes. The extract() method accepts an optional instructions parameter where you can provide natural-language guidance like 'Focus on the indemnification section' or 'Extract amounts in USD only'. Instructions are forwarded to the extraction engine alongside the schema to improve accuracy for ambiguous documents."
+      },
+      {
+        "question": "How do I extract only specific pages from a PDF?",
+        "answer": "Pass the options.page_range parameter with a page specification like '1-5' or '1,3,7-10'. This tells the extraction engine to process only those pages, which reduces processing time and credit consumption for large documents."
+      },
+      {
+        "question": "What happens if I pass both schema and schema_id?",
+        "answer": "The SDK throws a TalonicError with code 'multiple_schemas' immediately, before making any API call. You must provide at most one schema source: either an inline schema object or a schema_id referencing a saved schema."
+      }
     ],
-    "mentions": ["extract", "schema", "TypeScript", "quickstart"]
+    "mentions": [
+      "extract",
+      "schema",
+      "TypeScript"
+    ]
   },
   {
     "slug": "sdk-configuration",
     "parentSlug": "sdk-client",
     "title": "Configuration",
-    "seoTitle": "SDK Configuration — Talonic Docs",
-    "description": "Configure the Talonic client with API key, base URL, timeout, max retries, and custom fetch function.",
+    "seoTitle": "Client Configuration Options — Talonic Node.js SDK Docs",
+    "description": "Configure the Talonic client constructor: apiKey, baseUrl, timeout, maxRetries, and a custom fetch implementation for testing, proxies, and polyfills.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Client configuration", "code": "const talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  baseUrl: \"https://api.talonic.com\",   // default\n  timeout: 60_000,                       // ms; default 60s\n  maxRetries: 3,                         // 429, 500, 502, 503, 504, network, timeout\n  fetch: customFetch,                    // optional override (e.g. for testing)\n})" },
-      { "type": "param-table", "title": "Constructor options", "params": [
-        { "name": "apiKey", "type": "string", "required": true, "description": "Your Talonic API key. Starts with `tlnc_`." },
-        { "name": "baseUrl", "type": "string", "description": "API base URL. Default: `https://api.talonic.com`." },
-        { "name": "timeout", "type": "number", "description": "Request timeout in milliseconds. Default: `60000`." },
-        { "name": "maxRetries", "type": "number", "description": "Maximum retry attempts for transient errors. Default: `3`." },
-        { "name": "fetch", "type": "function", "description": "Custom fetch implementation for testing or proxying." }
-      ]}
+      {
+        "type": "paragraph",
+        "text": "Create a `Talonic` instance by passing a configuration object to the constructor. The only required field is `apiKey`; all other options have sensible defaults. The client validates the key format on construction and throws a `TypeError` if it is missing or empty."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "All options",
+        "code": "import { Talonic } from '@talonic/node'\n\nconst talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  baseUrl: 'https://api.talonic.com',   // default\n  timeout: 60_000,                       // ms; default 60s\n  maxRetries: 3,                         // 429, 500, 502, 503, 504, network, timeout\n  fetch: customFetch,                    // optional override (e.g. for testing)\n})"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `TalonicConfig` interface defines the constructor shape. The `apiKey` field is the only required parameter and must be a non-empty string. The constructor does not validate the `tlnc_` prefix or make any network calls; it only checks that the key is present and that a `fetch` implementation is available. Authentication failures surface on the first API call as a `TalonicAuthError` with status 401 (invalid key) or 403 (insufficient permissions)."
+      },
+      {
+        "type": "paragraph",
+        "text": "The `fetch` option lets you inject a custom implementation for testing or proxying. In production on Node.js 18+, the SDK uses the built-in `globalThis.fetch` automatically. If no fetch implementation is available (Node < 18 without a polyfill), the constructor throws a `TypeError` with a clear message."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Testing with a mock fetch",
+        "code": "import { Talonic } from '@talonic/node'\n\n// Inject a custom fetch for testing\nconst mockFetch = async (url: string, init?: RequestInit) => {\n  console.log(`Request: ${init?.method} ${url}`)\n  return new Response(JSON.stringify({ balance_credits: 1000, tier: 'free' }), {\n    status: 200,\n    headers: { 'content-type': 'application/json' },\n  })\n}\n\nconst talonic = new Talonic({\n  apiKey: 'tlnc_test_key',\n  fetch: mockFetch as typeof fetch,\n})\n\nconst balance = await talonic.credits.getBalance()\nconsole.log(balance.balance_credits) // 1000"
+      },
+      {
+        "type": "paragraph",
+        "text": "Adjust `timeout` for long-running extractions on large documents; the default of 60 seconds covers most cases. For multi-page PDFs or image-heavy documents, consider increasing to 120 seconds or more. Set `maxRetries` to `0` to disable automatic retries entirely, which is useful during development when you want to see errors immediately. In production, the default of 3 retries with exponential backoff handles most transient failures without any manual intervention."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Production configuration",
+        "code": "// Production: higher timeout for large documents, default retries\nconst talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  timeout: 120_000, // 2 minutes for large documents\n  maxRetries: 3,    // default — retries 429, 5xx, network, timeout\n})\n\n// Development: fast feedback, no retries\nconst devClient = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  timeout: 30_000,\n  maxRetries: 0, // fail immediately on errors\n})"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `baseUrl` option defaults to `https://api.talonic.com` and is useful for pointing at staging environments or local proxies during development. Trailing slashes are stripped automatically. Every HTTP request sent by the SDK includes an `Authorization: Bearer <apiKey>` header, a `User-Agent: talonic-node/<version>` header, and `Accept: application/json`. For non-FormData bodies, `Content-Type: application/json` is set automatically. You can override headers on individual requests through the transport layer, but the constructor-level options cover all common configuration needs."
+      },
+      {
+        "type": "callout",
+        "text": "API keys use the `tlnc_` prefix. Store them in environment variables or a secrets manager rather than hard-coding them in source files."
+      },
+      {
+        "type": "param-table",
+        "params": [
+          {
+            "name": "apiKey",
+            "type": "string",
+            "required": true,
+            "description": "Your Talonic API key. Starts with `tlnc_`."
+          },
+          {
+            "name": "baseUrl",
+            "type": "string",
+            "description": "API base URL. Trailing slashes are stripped automatically.",
+            "default": "https://api.talonic.com"
+          },
+          {
+            "name": "timeout",
+            "type": "number",
+            "description": "Request timeout in milliseconds. Applies per-request including retries.",
+            "default": "60000"
+          },
+          {
+            "name": "maxRetries",
+            "type": "number",
+            "description": "Max retry attempts for transient failures (429, 5xx, network, timeout). Set to 0 to disable.",
+            "default": "3"
+          },
+          {
+            "name": "fetch",
+            "type": "function",
+            "description": "Custom fetch implementation for testing, instrumentation, or polyfilling Node < 18."
+          }
+        ]
+      }
     ],
     "related": [
-      { "label": "Retries", "slug": "sdk-retries" },
-      { "label": "Error Classes", "slug": "sdk-error-classes" }
+      {
+        "label": "Retries & Backoff",
+        "slug": "sdk-retries"
+      },
+      {
+        "label": "Installation",
+        "slug": "sdk-installation"
+      },
+      {
+        "label": "Authentication",
+        "slug": "sdk-authentication"
+      }
     ],
-    "faq": [],
-    "mentions": ["configuration", "timeout", "retries", "fetch"]
+    "faq": [
+      {
+        "question": "How do I configure the Talonic SDK client?",
+        "answer": "Pass an options object to new Talonic() with apiKey (required), and optional baseUrl, timeout, maxRetries, and fetch. All options except apiKey have sensible defaults."
+      },
+      {
+        "question": "Can I disable automatic retries?",
+        "answer": "Yes. Set maxRetries to 0 in the constructor options. The SDK will throw on the first failure without retrying. This is useful during development for fast feedback on errors."
+      },
+      {
+        "question": "What happens if no fetch implementation is available?",
+        "answer": "The constructor throws a TypeError with the message 'no fetch implementation available'. On Node.js 18+ the built-in fetch is used automatically; on older versions, pass a polyfill via the fetch option."
+      },
+      {
+        "question": "Does the constructor validate the API key with the server?",
+        "answer": "No. The constructor only checks that apiKey is a non-empty string and that a fetch implementation exists. It does not make any network calls. Authentication errors (invalid key, insufficient permissions) surface on the first API call as TalonicAuthError with status 401 or 403."
+      },
+      {
+        "question": "What headers does the SDK send with every request?",
+        "answer": "Every request includes Authorization: Bearer <apiKey>, User-Agent: talonic-node/<version>, and Accept: application/json. For JSON bodies, Content-Type: application/json is set automatically. FormData bodies (used by extract) omit Content-Type to let the browser set the multipart boundary."
+      }
+    ],
+    "mentions": [
+      "configuration",
+      "apiKey",
+      "timeout",
+      "maxRetries"
+    ]
   },
   {
     "slug": "sdk-extract",
     "parentSlug": "sdk-client",
     "title": "Extract",
-    "seoTitle": "SDK Extract Method — Talonic Docs",
-    "description": "The top-level talonic.extract() method for single-call document extraction with schema validation.",
+    "seoTitle": "extract() Method — Talonic Node SDK Document Extraction",
+    "description": "Call talonic.extract() with a file and JSON Schema to receive structured, validated data plus confidence scores and per-call cost metadata in one await.",
     "content": [
-      { "type": "paragraph", "text": "The top-level `extract()` method is the fastest way to get structured data from a document. Provide a file and a schema, get back validated JSON." },
-      { "type": "code", "language": "typescript", "title": "Basic extraction", "code": "const result = await talonic.extract({\n  file_path: \"./invoice.pdf\",\n  schema: {\n    vendor_name: \"string\",\n    invoice_number: \"string\",\n    total_amount: \"number\",\n  },\n})" },
-      { "type": "paragraph", "text": "You can also pass `file_url`, `schema_id` (for saved schemas), or a full JSON Schema definition." }
+      {
+        "type": "paragraph",
+        "text": "The top-level `extract()` method is the primary entry point. Send a document and schema, receive structured validated data."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract with inline schema",
+        "code": "const result = await talonic.extract({\n  file_path: './invoice.pdf',\n  schema: {\n    type: 'object',\n    properties: {\n      vendor_name: { type: 'string' },\n      invoice_number: { type: 'string' },\n      total_amount: { type: 'number' },\n      line_items: {\n        type: 'array',\n        items: {\n          type: 'object',\n          properties: {\n            description: { type: 'string' },\n            quantity: { type: 'number' },\n            unit_price: { type: 'number' },\n          },\n        },\n      },\n    },\n  },\n})\n\nconsole.log(result.data)\n// { vendor_name: 'Acme Corp', total_amount: 1234.56, ... }\nconsole.log(result.extraction_id) // 'ext_abc123'\nconsole.log(result.confidence)    // { overall: 0.95, fields: { vendor_name: 0.99, ... } }"
+      },
+      {
+        "type": "paragraph",
+        "text": "The method signature is `extract(params: ExtractParams): Promise<WithRateLimit<ExtractResult>>`. The `ExtractParams` interface accepts exactly one file source: `file` (in-memory Blob, Buffer, or Uint8Array), `file_path` (local path read with `fs/promises`), `file_url` (remote URL fetched server-side), or `document_id` (re-extract an existing document). Provide at most one schema source: `schema` (inline object or JSON string) or `schema_id` (UUID of a saved schema). Omit both for auto-discovery, though this is not recommended in production as it may return 500 on some deployments."
+      },
+      {
+        "type": "paragraph",
+        "text": "Under the hood, **extract()** reads the file from disk (or fetches it from a URL), uploads it as multipart form data, and returns the structured result in a single round-trip. The response includes a `cost` block with credit consumption and a `rateLimit` object parsed from response headers."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract from a URL with options",
+        "code": "const result = await talonic.extract({\n  file_url: 'https://example.com/contracts/nda-2025.pdf',\n  schema_id: 'sch_def456',\n  instructions: 'Focus on termination and non-compete clauses',\n  include_markdown: true,\n  options: {\n    page_range: '1-5',\n    language_hint: 'en',\n    strict: true,\n  },\n})\n\nconsole.log(result.markdown)           // raw OCR text (because include_markdown: true)\nconsole.log(result.document.pages)     // 5\nconsole.log(result.processing?.duration_ms) // 2340"
+      },
+      {
+        "type": "paragraph",
+        "text": "Additional parameters fine-tune extraction behavior. The `instructions` field accepts natural-language guidance forwarded to the extraction engine. Set `include_markdown: true` to receive the raw OCR-converted markdown alongside structured data. The `options` object supports `page_range` (e.g. `'1-5'` or `'1,3,7-10'` for PDFs), `language_hint` (ISO 639-1 code), `strict` mode (omit fields not in the schema), and `include_raw_text`. The `content_type` parameter lets you override MIME type inference when the file extension is misleading."
+      },
+      {
+        "type": "paragraph",
+        "text": "For best results, always supply a `schema` or `schema_id` rather than relying on auto-discovery. Inline schemas work well for one-off extractions, while saved schemas (via `schema_id`) keep your extraction definitions consistent across calls and team members."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Extract in-memory bytes",
+        "code": "import { readFile } from 'node:fs/promises'\n\n// Pass a Buffer or Uint8Array directly\nconst buffer = await readFile('./scan.tiff')\nconst result = await talonic.extract({\n  file: buffer,\n  filename: 'scan.tiff',\n  content_type: 'image/tiff',\n  schema: {\n    type: 'object',\n    properties: {\n      patient_name: { type: 'string' },\n      date_of_service: { type: 'string', format: 'date' },\n      diagnosis_codes: { type: 'array', items: { type: 'string' } },\n      total_charges: { type: 'number' },\n    },\n  },\n})\n\n// The ExtractResult includes document metadata\nconsole.log(result.document.mime_type)         // 'image/tiff'\nconsole.log(result.document.size_bytes)        // 4521984\nconsole.log(result.document.language_detected) // 'en'"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `ExtractResult` response is a rich object. The `extraction_id` is a stable identifier you can use with `talonic.extractions.get()` or `talonic.extractions.getData()` to retrieve the result later. The `document` block includes `id`, `filename`, `pages`, `size_bytes`, `mime_type`, `type_detected`, and `language_detected`. The `confidence` block provides `overall` and per-field scores between 0 and 1. The `schema` block shows the source (`'inline'` or `'saved'`), the resolved definition, and a `save_url` for persisting inline schemas. The `links` block provides URLs for the extraction, document, and dashboard views."
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK validates parameters before making the API call. Passing zero or more than one file source throws a `TalonicError` with code `missing_file_source` or `multiple_file_sources`. Passing both `schema` and `schema_id` throws `multiple_schemas`. When using JSON Schema format with `properties` but no `required` array, the SDK auto-populates `required` with all property keys to prevent the silent-empty-data footgun where the API returns null for every field."
+      },
+      {
+        "type": "callout",
+        "text": "Every **extract()** response carries `cost` metadata (credits consumed, EUR value, post-call balance) and `rateLimit` info. Use these to build budget-aware pipelines without extra API calls."
+      }
     ],
     "related": [
-      { "label": "Quick Start", "slug": "sdk-quickstart" },
-      { "label": "Schemas", "slug": "sdk-schemas" },
-      { "label": "POST /v1/extract", "slug": "post-extract" }
+      {
+        "label": "Schemas",
+        "slug": "sdk-schemas"
+      },
+      {
+        "label": "Documents",
+        "slug": "sdk-documents"
+      },
+      {
+        "label": "Quick Start",
+        "slug": "sdk-quickstart"
+      }
     ],
-    "faq": [],
-    "mentions": ["extract", "schema", "file_path", "file_url"]
+    "faq": [
+      {
+        "question": "What inputs does talonic.extract() accept?",
+        "answer": "It accepts file_path (local file), file_url (remote URL), file (in-memory Blob, Buffer, or Uint8Array with filename), or document_id (previously uploaded). Provide a schema or schema_id for the extraction definition."
+      },
+      {
+        "question": "Does extract() return cost information?",
+        "answer": "Yes. Every extract response includes a cost block with costCredits, costEur, balanceCredits, cellsResolvedRegistry, and cellsResolvedAi parsed from response headers."
+      },
+      {
+        "question": "Can I extract the same document with different schemas?",
+        "answer": "Yes. Pass the document_id from a previous upload along with a new schema or schema_id. The document is not re-uploaded, saving bandwidth and credits."
+      },
+      {
+        "question": "What does the auto-populate required behavior do?",
+        "answer": "When you pass a JSON Schema with properties but no required array, the SDK automatically adds all property keys to required. This prevents the silent-empty-data issue where the API returns null with confidence 0 for every field you intended to extract."
+      },
+      {
+        "question": "What file formats does extract() support?",
+        "answer": "The SDK supports PDF, PNG, JPG, TIFF, WebP, BMP, GIF, DOCX, DOC, XLSX, XLS, PPTX, PPT, TXT, Markdown, CSV, TSV, JSON, XML, HTML, EML, MSG, and ZIP. MIME types are inferred from the file extension. Use content_type to override when the extension is misleading."
+      },
+      {
+        "question": "How do I include the raw OCR text in the response?",
+        "answer": "Set include_markdown: true in the extract params. The response will include a markdown field containing the full OCR-converted text that the extraction engine used as input. This is useful for debugging extraction quality or building custom post-processing."
+      }
+    ],
+    "mentions": [
+      "extract",
+      "schema",
+      "file_path",
+      "file_url",
+      "document_id"
+    ]
   },
   {
     "slug": "sdk-documents",
     "parentSlug": "sdk-resources",
     "title": "Documents",
-    "seoTitle": "SDK Documents Resource — Talonic Docs",
-    "description": "List, get, delete, and re-extract documents using the Talonic Node SDK documents resource.",
+    "seoTitle": "Documents Resource — Talonic Node SDK API Reference",
+    "description": "List, retrieve, filter, re-extract, and delete workspace documents with talonic.documents, including OCR markdown retrieval and cursor-based pagination.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Documents API", "code": "// List documents with pagination\nawait talonic.documents.list({ per_page: 50 })\n\n// Get a single document\nawait talonic.documents.get(id)\n\n// Get OCR markdown\nawait talonic.documents.getMarkdown(id)\n\n// Re-extract a document\nawait talonic.documents.reExtract(id)\n\n// Delete a document\nawait talonic.documents.delete(id)" }
+      {
+        "type": "paragraph",
+        "text": "The **documents** resource lets you manage uploaded files in your workspace. Every call to **extract()** creates a document automatically, but you can also list, inspect, re-extract, filter, and delete documents independently."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Core document operations",
+        "code": "// List documents with cursor-based pagination\nconst docs = await talonic.documents.list({ limit: 50 })\nconsole.log(docs.data.map(d => d.filename))\nconsole.log(docs.pagination) // { next_cursor: '...', has_more: true }\n\n// Get a single document with full metadata\nconst doc = await talonic.documents.get('doc_abc123')\nconsole.log(doc.filename)           // 'invoice.pdf'\nconsole.log(doc.status)             // 'completed'\nconsole.log(doc.pages)              // 3\nconsole.log(doc.triage)             // { sensitivity: 'internal', pii_detected: true, ... }\n\n// Get OCR markdown\nconst md = await talonic.documents.getMarkdown('doc_abc123')\nconsole.log(md.markdown)            // '# Invoice\\n\\nVendor: Acme Corp...'"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `list()` method accepts `ListDocumentsParams` with filtering by `source_id`, `status` (`'pending'`, `'processing'`, `'completed'`, `'error'`), date range (`after`, `before` as ISO 8601 strings), and full-text `search` across filenames and extracted content. Pagination uses cursor-based navigation: pass `limit` for page size and `cursor` from a previous response's `pagination.next_cursor` to fetch the next page. The legacy `page` and `per_page` parameters are accepted as aliases but cursor-based is the canonical form. Results include a `pagination` object with `next_cursor` and `has_more`."
+      },
+      {
+        "type": "paragraph",
+        "text": "Use **getMarkdown()** to retrieve the raw OCR output for a document. This is useful for debugging extraction quality or building custom post-processing pipelines on top of the parsed text."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Filter documents by extracted field values",
+        "code": "// Filter documents using composable conditions on extracted fields\nconst filtered = await talonic.documents.filter({\n  conditions: [\n    { field: 'vendor.name', operator: 'eq', value: 'Acme Corp' },\n    { field: 'total_amount', operator: 'gt', value: 10000 },\n  ],\n  sort: { field: 'invoice_date', direction: 'desc' },\n  limit: 25,\n})\n\nconsole.log(filtered.total)      // 47\nconsole.log(filtered.documents)  // [{ id: '...', filename: '...', fieldValues: { ... } }, ...]"
+      },
+      {
+        "type": "paragraph",
+        "text": "The **filter()** method lets you query documents by extracted field values using composable conditions. Each condition specifies a `field` (canonical name like `'vendor.name'`) or `fieldId` (UUID), an `operator` (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `between`, `contains`, `is_empty`, `is_not_empty`), and a `value`. The `between` operator also accepts `valueTo` for range queries. Results include `fieldValues` with the matched field data for each document hit. You can optionally scope results to a specific source connection with `source_connection_id`."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Re-extract and delete",
+        "code": "// Re-run extraction on an existing document (e.g. after schema update)\nconst reExtracted = await talonic.documents.reExtract('doc_abc123')\nconsole.log(reExtracted.status)  // 'processing'\nconsole.log(reExtracted.message) // 'Re-extraction started'\n\n// Delete a document and all associated extractions (irreversible)\nconst deleted = await talonic.documents.delete('doc_abc123')\nconsole.log(deleted.deleted) // true"
+      },
+      {
+        "type": "paragraph",
+        "text": "The **get()** method returns a `Document` object with full metadata including `triage` classification data when available. The triage block contains `sensitivity` (public, internal, restricted), `department`, `jurisdiction` (ISO country code), `pii_detected`, `pii_categories`, `regulated_data`, and `confidentiality_marking`. The `processing_log` array shows each pipeline step with status, duration, and detail. These fields are populated progressively as the document moves through the processing pipeline."
+      },
+      {
+        "type": "callout",
+        "text": "Deleting a document also removes all associated extractions. If you need to preserve extraction history, fetch the data with **extractions.getData()** before deleting."
+      }
     ],
     "related": [
-      { "label": "Documents API", "slug": "list-documents" },
-      { "label": "Extractions", "slug": "sdk-extractions" }
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Extractions",
+        "slug": "sdk-extractions"
+      }
     ],
-    "faq": [],
-    "mentions": ["documents", "list", "get", "delete", "markdown", "re-extract"]
+    "faq": [
+      {
+        "question": "How do I list documents with the Talonic SDK?",
+        "answer": "Call talonic.documents.list() with optional parameters like limit, cursor, status, source_id, after, before, and search. Results are paginated using cursor-based navigation."
+      },
+      {
+        "question": "What does getMarkdown() return?",
+        "answer": "It returns the raw OCR markdown output for a document, which is the text the extraction engine uses as input. Useful for debugging or building custom processing pipelines."
+      },
+      {
+        "question": "Does deleting a document remove its extractions?",
+        "answer": "Yes. Deleting a document removes all associated extraction results. Retrieve any data you need before calling delete()."
+      },
+      {
+        "question": "How do I filter documents by extracted field values?",
+        "answer": "Use talonic.documents.filter() with an array of conditions. Each condition specifies a field name or fieldId, an operator (eq, gt, contains, between, etc.), and a value. You can combine multiple conditions, add sort order, and paginate with page and limit parameters."
+      },
+      {
+        "question": "What is the triage field on documents?",
+        "answer": "The triage block contains automatic classification output including sensitivity tier, department, jurisdiction, PII detection, regulated data flags, and confidentiality markings. It is populated by the Talonic classification pipeline after document ingestion and may be null for newly uploaded documents."
+      }
+    ],
+    "mentions": [
+      "documents",
+      "list",
+      "get",
+      "delete",
+      "markdown"
+    ]
   },
   {
     "slug": "sdk-extractions",
     "parentSlug": "sdk-resources",
     "title": "Extractions",
-    "seoTitle": "SDK Extractions Resource — Talonic Docs",
-    "description": "Query extraction results, retrieve structured data in JSON or CSV, and submit field corrections via the Node SDK.",
+    "seoTitle": "Extractions Resource — Talonic Node SDK API Reference",
+    "description": "Query extraction results with talonic.extractions: list runs, fetch structured data as JSON or CSV, and patch field values with audited human corrections.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Extractions API", "code": "// List extractions for a document\nawait talonic.extractions.list({ document_id })\n\n// Get extraction metadata\nawait talonic.extractions.get(id)\n\n// Get structured data as object\nawait talonic.extractions.getData(id)\n\n// Get structured data as CSV string\nawait talonic.extractions.getData(id, { format: \"csv\" })\n\n// Submit corrections\nawait talonic.extractions.patch(id, { corrections: [...] })" }
+      {
+        "type": "paragraph",
+        "text": "The **extractions** resource gives you access to the structured data produced by each extraction run. Every **extract()** call creates an extraction record that you can query, export, and correct after the fact."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "List and retrieve extractions",
+        "code": "// List extractions for a specific document\nconst extractions = await talonic.extractions.list({\n  document_id: 'doc_abc123',\n  status: 'complete',\n  limit: 10,\n})\n\nfor (const ext of extractions.data) {\n  console.log(`${ext.id}: confidence ${ext.confidence_overall}, created ${ext.created_at}`)\n}\n\n// Get full extraction with per-field confidence\nconst extraction = await talonic.extractions.get('ext_xyz789')\nconsole.log(extraction.data)                    // { vendor_name: 'Acme', total: 1500, ... }\nconsole.log(extraction.confidence?.overall)     // 0.94\nconsole.log(extraction.confidence?.fields)      // { vendor_name: 0.99, total: 0.91, ... }\nconsole.log(extraction.metadata?.processing_time_ms) // 1820"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `list()` method accepts `ListExtractionsParams` with optional filters for `document_id`, `schema_id`, and `status` (`'complete'`, `'processing'`, `'failed'`). Pagination uses cursor-based navigation with `cursor` and `limit` parameters. The legacy `page` and `per_page` parameters are accepted for compatibility. Each extraction in the list response includes a compact `confidence_overall` number, while the individual `get()` response includes the full `confidence` object with per-field scores."
+      },
+      {
+        "type": "paragraph",
+        "text": "Use **getData()** to retrieve extraction results as JSON (default) or CSV. The JSON format returns typed objects matching your schema definition, while CSV is convenient for spreadsheet workflows or bulk data exports. The method uses TypeScript overloads: calling with `{ format: 'json' }` or no options returns `WithRateLimit<Record<string, unknown>>`, while `{ format: 'csv' }` returns a plain `string`."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Export extraction data",
+        "code": "// Get structured data as JSON (default)\nconst jsonData = await talonic.extractions.getData('ext_xyz789')\nconsole.log(jsonData) // { vendor_name: 'Acme', line_items: [...], total: 1500 }\n\n// Get structured data as CSV for spreadsheet workflows\nconst csvData = await talonic.extractions.getData('ext_xyz789', { format: 'csv' })\nconsole.log(csvData)\n// \"vendor_name,total,due_date\\nAcme Corp,1500,2025-03-15\"\n\n// Write CSV to file\nimport { writeFile } from 'node:fs/promises'\nawait writeFile('./export.csv', csvData)"
+      },
+      {
+        "type": "paragraph",
+        "text": "The **patch()** method submits field-level corrections back to the extraction. Corrections improve future extraction accuracy for similar documents by feeding the correction loop, so submitting them is worth the effort even if you fix the value downstream. Each correction specifies the `field` name, the corrected `value`, and an optional `reason` string explaining the change. The `propagate` parameter controls scope: `'this_document_only'` (default) applies the correction to this extraction only, while `'all_similar'` propagates it to similar extractions across your workspace."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Submit corrections",
+        "code": "// Submit field-level corrections to improve future accuracy\nawait talonic.extractions.patch('ext_xyz789', {\n  corrections: [\n    {\n      field: 'vendor_name',\n      value: 'Acme Corporation',\n      reason: 'Full legal name required',\n    },\n    {\n      field: 'total_amount',\n      value: 14250.00,\n      reason: 'OCR misread decimal separator',\n    },\n  ],\n  propagate: 'all_similar', // apply to similar documents too\n})"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `Extraction` interface includes metadata about the extraction run. The `metadata` block provides `pages` (number of pages processed), `language` (detected language code), `document_type` (detected document category), and `processing_time_ms`. The `links` object contains URLs for the extraction resource, related endpoints, and the dashboard view. Use these links to build navigation between the SDK and the Talonic web dashboard."
+      },
+      {
+        "type": "callout",
+        "text": "A single document can have multiple extractions if it was re-extracted with different schemas. Use **list({ document_id })** to see all extraction runs for a given document."
+      }
     ],
     "related": [
-      { "label": "Extractions API", "slug": "list-extractions" },
-      { "label": "Documents", "slug": "sdk-documents" }
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Documents",
+        "slug": "sdk-documents"
+      }
     ],
-    "faq": [],
-    "mentions": ["extractions", "corrections", "CSV", "structured data"]
+    "faq": [
+      {
+        "question": "How do I get extraction data as CSV?",
+        "answer": "Call talonic.extractions.getData(id, { format: \"csv\" }) to receive the structured data as a CSV string. The return type is a plain string rather than a WithRateLimit wrapper."
+      },
+      {
+        "question": "What does the patch() method do?",
+        "answer": "It submits field-level corrections to an extraction result. Each correction specifies a field name, corrected value, and optional reason. Corrections are fed back into the extraction engine to improve accuracy for similar documents in future runs. Use the propagate parameter to control whether corrections apply to this document only or all similar documents."
+      },
+      {
+        "question": "Can a document have multiple extractions?",
+        "answer": "Yes. Re-extracting a document with a different schema creates a new extraction record. Use extractions.list({ document_id }) to retrieve all runs for one document."
+      },
+      {
+        "question": "What is the difference between get() and getData()?",
+        "answer": "The get() method returns the full Extraction object including metadata, confidence scores, status, timestamps, and links alongside the extracted data. The getData() method returns just the extracted field values as a plain JSON object or CSV string, without the surrounding metadata. Use get() for inspection and debugging, getData() for data export and downstream processing."
+      },
+      {
+        "question": "How do I filter extractions by status?",
+        "answer": "Pass the status parameter to extractions.list() with one of 'complete', 'processing', or 'failed'. You can combine this with document_id and schema_id filters to narrow results further. Pagination is cursor-based using cursor and limit parameters."
+      }
+    ],
+    "mentions": [
+      "extractions",
+      "getData",
+      "corrections",
+      "CSV",
+      "JSON"
+    ]
   },
   {
     "slug": "sdk-schemas",
     "parentSlug": "sdk-resources",
     "title": "Schemas",
-    "seoTitle": "SDK Schemas Resource — Talonic Docs",
-    "description": "Create, list, get, update, and delete reusable extraction schemas via the Talonic Node SDK.",
+    "seoTitle": "Schemas Resource — Talonic Node.js SDK API Reference",
+    "description": "Create, list, update, and delete reusable JSON Schema extraction definitions with talonic.schemas for consistent structured output across all documents.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Schemas API", "code": "// List all schemas\nawait talonic.schemas.list()\n\n// Get a schema\nawait talonic.schemas.get(id)\n\n// Create a new schema\nawait talonic.schemas.create({ name, definition })\n\n// Update a schema\nawait talonic.schemas.update(id, { ... })\n\n// Delete a schema\nawait talonic.schemas.delete(id)" }
+      {
+        "type": "paragraph",
+        "text": "The **schemas** resource manages reusable extraction definitions. Instead of passing an inline `schema` on every **extract()** call, create a named schema once and reference it by `schema_id` across all your extractions."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Create and use a saved schema",
+        "code": "// Create a reusable schema for invoice extraction\nconst schema = await talonic.schemas.create({\n  name: 'Invoice Schema v2',\n  description: 'Standard invoice fields for AP automation',\n  definition: {\n    type: 'object',\n    properties: {\n      vendor_name: { type: 'string', description: 'Legal entity name of the vendor' },\n      invoice_number: { type: 'string' },\n      invoice_date: { type: 'string', format: 'date' },\n      due_date: { type: 'string', format: 'date' },\n      total_amount: { type: 'number' },\n      currency: { type: 'string' },\n      line_items: {\n        type: 'array',\n        items: {\n          type: 'object',\n          properties: {\n            description: { type: 'string' },\n            quantity: { type: 'number' },\n            unit_price: { type: 'number' },\n          },\n        },\n      },\n    },\n  },\n})\n\nconsole.log(schema.id)        // 'sch_abc123'\nconsole.log(schema.short_id)  // 'SCH-3A4D79D2'\nconsole.log(schema.version)   // 1\n\n// Use the saved schema for extraction\nconst result = await talonic.extract({\n  file_path: './invoice.pdf',\n  schema_id: schema.id,\n})"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `create()` method accepts a `CreateSchemaParams` object with `name` (required), `definition` (required, JSON Schema object), and an optional `description`. The returned `Schema` object includes `id` (canonical UUID), `short_id` (human-readable identifier like `'SCH-3A4D79D2'` visible in the dashboard), `version` (starts at 1, bumps on each update), `field_count`, `extraction_count`, and `links` with URLs for the schema, its extractions, and the dashboard view. Both `id` and `short_id` are accepted as lookup keys on `get()`, `update()`, and `delete()`."
+      },
+      {
+        "type": "paragraph",
+        "text": "Schema definitions follow JSON Schema format with `type: \"object\"` and `properties`. Each property specifies a field name and type that the extraction engine will resolve. Updating a schema does not retroactively change existing extractions, but all future **extract()** calls using that `schema_id` will pick up the new definition. The `version` field is bumped automatically on each update so you can track which version a given extraction used."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "List, update, and delete schemas",
+        "code": "// List all schemas in the workspace\nconst schemas = await talonic.schemas.list()\nfor (const s of schemas.data) {\n  console.log(`${s.name} (v${s.version}): ${s.field_count} fields, ${s.extraction_count} extractions`)\n}\n\n// Update a schema definition (bumps version, does not change existing extractions)\nconst updated = await talonic.schemas.update('sch_abc123', {\n  name: 'Invoice Schema v3',\n  definition: {\n    type: 'object',\n    properties: {\n      vendor_name: { type: 'string' },\n      invoice_number: { type: 'string' },\n      total_amount: { type: 'number' },\n      tax_amount: { type: 'number' },  // new field\n      payment_terms: { type: 'string' }, // new field\n    },\n  },\n})\nconsole.log(updated.version) // 2\n\n// Delete a schema (existing extractions are retained)\nconst deleted = await talonic.schemas.delete('sch_abc123')\nconsole.log(deleted.deleted) // true"
+      },
+      {
+        "type": "paragraph",
+        "text": "Saved schemas are workspace-scoped, so every team member with API access can reference the same `schema_id`. This makes schemas the right tool for standardising extraction output across a pipeline or team. The `update()` method uses HTTP PUT and replaces the entire schema definition. Pass all fields you want to keep, not just the changes. The `delete()` method removes the schema but retains all existing extractions that used it, so historical data is preserved."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Retrieve a schema by ID",
+        "code": "// Get a schema by canonical UUID or short_id\nconst schema = await talonic.schemas.get('sch_abc123')\n// or: await talonic.schemas.get('SCH-3A4D79D2')\n\nconsole.log(schema.name)         // 'Invoice Schema v2'\nconsole.log(schema.definition)   // { type: 'object', properties: { ... } }\nconsole.log(schema.created_at)   // '2025-06-01T10:30:00.000Z'\nconsole.log(schema.updated_at)   // '2025-06-15T14:22:00.000Z'\nconsole.log(schema.links)        // { self: '...', extractions: '...', dashboard: '...' }"
+      },
+      {
+        "type": "callout",
+        "variant": "warning",
+        "text": "Use full JSON Schema format (`type: \"object\"` with `properties`) rather than the flat key-type shorthand. The server-side normaliser for the shorthand format is not fully supported yet."
+      }
     ],
     "related": [
-      { "label": "Schemas API", "slug": "list-schemas" },
-      { "label": "Extract", "slug": "sdk-extract" }
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Jobs",
+        "slug": "sdk-jobs"
+      }
     ],
-    "faq": [],
-    "mentions": ["schemas", "create", "update", "delete"]
+    "faq": [
+      {
+        "question": "How do I create a reusable schema?",
+        "answer": "Call talonic.schemas.create({ name, definition }) with a JSON Schema definition. The returned object includes id and short_id. Use either as schema_id in future extract calls."
+      },
+      {
+        "question": "Are schemas shared across team members?",
+        "answer": "Yes. Schemas are workspace-scoped. Anyone with API access to the workspace can reference the same schema_id in their extract calls."
+      },
+      {
+        "question": "Does updating a schema change existing extractions?",
+        "answer": "No. Updating a schema bumps the version number and only affects future extract calls that reference that schema_id. Existing extraction results remain unchanged and retain their original schema version."
+      },
+      {
+        "question": "What happens to extractions when I delete a schema?",
+        "answer": "Existing extractions are retained when you delete a schema. The extraction data remains accessible via the extractions resource. Only the schema definition itself is removed, so you can no longer use that schema_id for new extractions."
+      },
+      {
+        "question": "Can I look up a schema by its short_id?",
+        "answer": "Yes. Both the canonical UUID (id) and the human-readable short_id (e.g. 'SCH-3A4D79D2') are accepted as lookup keys on get(), update(), and delete(). The short_id is displayed in the Talonic dashboard for easy reference."
+      }
+    ],
+    "mentions": [
+      "schemas",
+      "JSON Schema",
+      "create",
+      "update"
+    ]
   },
   {
     "slug": "sdk-jobs",
     "parentSlug": "sdk-resources",
     "title": "Jobs",
-    "seoTitle": "SDK Jobs Resource — Talonic Docs",
-    "description": "Create, list, get results, and cancel asynchronous batch extraction jobs via the Node SDK.",
+    "seoTitle": "Batch Jobs Resource — Talonic Node SDK API Reference",
+    "description": "Run asynchronous batch extraction with talonic.jobs: create jobs from document sets, poll live progress, retrieve structured results, and cancel safely.",
     "content": [
-      { "type": "code", "language": "typescript", "title": "Jobs API", "code": "// Create a batch job\nawait talonic.jobs.create({ schema_id, document_ids })\n\n// List all jobs\nawait talonic.jobs.list()\n\n// Get job status\nawait talonic.jobs.get(id)\n\n// Get job results\nawait talonic.jobs.getResults(id)\n\n// Cancel a running job\nawait talonic.jobs.cancel(id)" }
+      {
+        "type": "paragraph",
+        "text": "The **jobs** resource handles asynchronous batch extraction across multiple documents. Create a job with a `schema_id` and an array of `document_ids`, then poll for completion or fetch results when the job finishes."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Create and monitor a batch job",
+        "code": "// Create a batch extraction job\nconst job = await talonic.jobs.create({\n  schema_id: 'sch_abc123',\n  document_ids: ['doc_001', 'doc_002', 'doc_003', 'doc_004', 'doc_005'],\n  name: 'Q4 Invoice Batch',\n})\n\nconsole.log(job.id)     // 'job_xyz789'\nconsole.log(job.status) // 'queued'\n\n// Poll for completion\nlet current = await talonic.jobs.get(job.id)\nwhile (current.status === 'queued' || current.status === 'processing') {\n  console.log(`Progress: ${current.completed_documents}/${current.total_documents} (${current.current_phase})`)\n  await new Promise(r => setTimeout(r, 5000))\n  current = await talonic.jobs.get(job.id)\n}\n\nconsole.log(`Job ${current.status}: ${current.completed_documents} completed, ${current.failed_documents} failed`)"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `create()` method accepts `CreateJobParams` with `schema_id` (required), optional `document_ids` (array of document UUIDs to process), and optional `name` (human-readable label). When `document_ids` is omitted, the job processes all unprocessed documents in the workspace. The returned `Job` object includes `id`, `status`, `progress`, `total_documents`, `completed_documents`, `failed_documents`, `current_phase`, `estimated_completion`, and `links` with URLs for the job and its results."
+      },
+      {
+        "type": "paragraph",
+        "text": "Jobs run server-side and process documents in parallel. Use **get()** to poll the job status (`'queued'`, `'processing'`, `'completed'`, `'failed'`, `'cancelled'`) and **getResults()** to retrieve the extraction output once complete. For long-running batches, poll on a reasonable interval such as every 5 seconds. The `grid_stats` block on the job object provides `total_cells`, `filled`, `empty`, and `fill_rate` for monitoring extraction quality across the batch."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Retrieve batch results",
+        "code": "// Get structured results from a completed job\nconst results = await talonic.jobs.getResults('job_xyz789')\n\nfor (const row of results.data) {\n  console.log(`${row.document_filename}: ${JSON.stringify(row.values)}`)\n}\n// invoice_001.pdf: { vendor_name: 'Acme', total: 1500, ... }\n// invoice_002.pdf: { vendor_name: 'Globex', total: 3200, ... }\n\n// Export to CSV or send to your database\nconst rows = results.data.map(r => ({\n  filename: r.document_filename,\n  document_id: r.document_id,\n  ...r.values,\n}))"
+      },
+      {
+        "type": "paragraph",
+        "text": "Use **cancel()** to abort a job that is still in progress. Cancelled jobs stop processing remaining documents but any extractions already completed are preserved and accessible via **getResults()**. The `cancelled_at` timestamp is set on the job object when cancellation takes effect."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "List and cancel jobs",
+        "code": "// List jobs filtered by status\nconst runningJobs = await talonic.jobs.list({ status: 'processing', limit: 10 })\nfor (const j of runningJobs.data) {\n  console.log(`${j.id}: ${j.completed_documents}/${j.total_documents} (est. ${j.estimated_completion})`)\n}\n\n// Cancel a job — partial results are retained\nconst cancelled = await talonic.jobs.cancel('job_xyz789')\nconsole.log(cancelled.status)        // 'cancelled'\nconsole.log(cancelled.cancelled_at)  // '2025-06-15T14:30:00.000Z'\n\n// Retrieve whatever completed before cancellation\nconst partial = await talonic.jobs.getResults('job_xyz789')\nconsole.log(`Retrieved ${partial.data.length} results before cancellation`)"
+      },
+      {
+        "type": "paragraph",
+        "text": "The `list()` method accepts `ListJobsParams` with optional `status` filter, cursor-based pagination (`cursor` and `limit`), and `order` for sorting. The `JobResults` response contains a `data` array where each entry has `document_id`, `document_filename`, and `values` (the extracted field data). This flat structure makes it straightforward to aggregate results across documents for reporting or database insertion."
+      },
+      {
+        "type": "callout",
+        "text": "Jobs require a saved `schema_id` rather than an inline schema. Create your schema with **schemas.create()** first, then pass the returned ID to **jobs.create()**."
+      }
     ],
     "related": [
-      { "label": "Jobs API", "slug": "list-jobs" },
-      { "label": "Batch Inference", "slug": "batch-overview" }
+      {
+        "label": "Schemas",
+        "slug": "sdk-schemas"
+      },
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Extractions",
+        "slug": "sdk-extractions"
+      }
     ],
-    "faq": [],
-    "mentions": ["jobs", "batch", "asynchronous", "cancel"]
+    "faq": [
+      {
+        "question": "How do I run batch extraction with the Talonic SDK?",
+        "answer": "Call talonic.jobs.create({ schema_id, document_ids }) to start an async batch job, then poll with talonic.jobs.get(id) or retrieve results with talonic.jobs.getResults(id). Omit document_ids to process all unprocessed documents in the workspace."
+      },
+      {
+        "question": "Can I use an inline schema with jobs?",
+        "answer": "No. Jobs require a saved schema_id. Create your schema first with talonic.schemas.create(), then pass the returned ID to talonic.jobs.create()."
+      },
+      {
+        "question": "What happens to completed extractions if I cancel a job?",
+        "answer": "Extractions already completed before cancellation are preserved. You can still retrieve them with talonic.jobs.getResults(id). The job status changes to 'cancelled' and the cancelled_at timestamp is set."
+      },
+      {
+        "question": "How do I monitor batch job progress?",
+        "answer": "Poll talonic.jobs.get(id) on a regular interval (e.g. every 5 seconds). The Job object includes completed_documents, total_documents, failed_documents, current_phase, progress, estimated_completion, and grid_stats with fill_rate for quality monitoring."
+      },
+      {
+        "question": "What job statuses are available for filtering?",
+        "answer": "Jobs can be in one of five statuses: 'queued' (waiting to start), 'processing' (actively extracting), 'completed' (all documents processed), 'failed' (terminal error), or 'cancelled' (manually stopped). Use the status parameter on list() to filter."
+      }
+    ],
+    "mentions": [
+      "jobs",
+      "batch",
+      "async"
+    ]
   },
   {
     "slug": "sdk-cli-usage",
     "parentSlug": "sdk-cli",
     "title": "Usage",
-    "seoTitle": "Talonic CLI Usage — Talonic Docs",
-    "description": "Use the talonic CLI binary for command-line extraction, schema management, and document listing.",
+    "seoTitle": "Talonic CLI — Terminal Document Extraction for Node.js",
+    "description": "Use the bundled talonic CLI to extract documents, list schemas and documents, and script its JSON output from the terminal with only an API key in env.",
     "content": [
-      { "type": "paragraph", "text": "The package ships with a `talonic` binary for command-line usage:" },
-      { "type": "code", "language": "bash", "title": "CLI examples", "code": "talonic schemas list\ntalonic documents list --per-page=20\ntalonic extract ./invoice.pdf \\\n  --schema='{\"vendor_name\":\"string\",\"total_amount\":\"number\"}'\ntalonic --help" }
+      {
+        "type": "paragraph",
+        "text": "The package ships with a `talonic` binary for terminal-based workflows. It focuses on the operations you reach for most often outside of code: running an extraction against a local file, listing your saved schemas, and inspecting the documents in your workspace. Every command is a thin wrapper over the same SDK client, so authentication, retries, and error mapping behave exactly as they do in TypeScript."
+      },
+      {
+        "type": "code",
+        "language": "bash",
+        "title": "Basic usage",
+        "code": "# Extract structured data from a file with an inline schema\ntalonic extract ./invoice.pdf \\\n  --schema='{\"type\":\"object\",\"properties\":{\"vendor_name\":{\"type\":\"string\"},\"total_amount\":{\"type\":\"number\"}}}'\n\n# Extract with a saved schema\ntalonic extract ./contract.pdf --schema-id=sch_abc123\n\n# List schemas in your workspace\ntalonic schemas list\n\n# List documents with paging and a status filter\ntalonic documents list --per-page=20 --status=completed\n\n# Show help and version\ntalonic --help\ntalonic --version"
+      },
+      {
+        "type": "paragraph",
+        "text": "The CLI reads `TALONIC_API_KEY` from the environment and exits with an error message if it is missing. Set `TALONIC_BASE_URL` to point at a staging environment or local proxy; it maps directly to the SDK's `baseUrl` option. There is intentionally no `--api-key` flag, so keys never end up in your shell history. All successful output is pretty-printed JSON on stdout, making it straightforward to pipe into `jq`, `grep`, or any other tool that accepts JSON input."
+      },
+      {
+        "type": "code",
+        "language": "bash",
+        "title": "Supported commands",
+        "code": "# Schemas\ntalonic schemas list                    # list all saved schemas\ntalonic schemas get sch_abc123          # get one schema by ID\n\n# Documents\ntalonic documents list                  # list documents\ntalonic documents list --per-page=10    # page size\ntalonic documents list --status=error   # filter: pending | processing | completed | error\ntalonic documents get doc_abc123        # get one document by ID\n\n# Extraction\ntalonic extract <file_path> [options]\n#   --schema='<json>'        inline schema (full JSON Schema recommended)\n#   --schema-id=<id>         use a saved schema\n#   --instructions='<text>'  natural-language extraction guidance\n#   --include-markdown       include OCR markdown in the response\n\n# Environment\n#   TALONIC_API_KEY   (required)  your tlnc_ API key\n#   TALONIC_BASE_URL  (optional)  override the API base URL"
+      },
+      {
+        "type": "paragraph",
+        "text": "Command output is the full SDK response serialized with two-space indentation, so list commands return an object with `data` and `pagination` keys — plus the `rateLimit` and `cost` metadata the SDK attaches to every response. Keep that envelope in mind when scripting: document IDs live at `.data[].id`, not at the top level. Extract output mirrors the `ExtractResult` shape, with the structured fields under `.data`."
+      },
+      {
+        "type": "code",
+        "language": "bash",
+        "title": "Scripting with jq",
+        "code": "# Extract all document IDs\ntalonic documents list | jq '.data[].id'\n\n# Filenames of completed documents\ntalonic documents list --status=completed | jq '.data[].filename'\n\n# Run an extraction and keep only the structured fields\ntalonic extract ./invoice.pdf --schema-id=sch_abc123 | jq '.data'\n\n# Check the remaining rate-limit budget on any call\ntalonic schemas list | jq '.rateLimit'\n\n# Save a full extraction result to a file\ntalonic extract ./contract.pdf --schema-id=sch_abc123 > result.json"
+      },
+      {
+        "type": "paragraph",
+        "text": "Because the CLI constructs a standard SDK client, transient failures (429 rate limits, 5xx responses, network errors, timeouts) are retried automatically with exponential backoff before anything is reported. When a command does fail, the error goes to stderr as plain-text lines — `Error: <message>` followed by indented `code:`, `status:`, and `request-id:` lines when available — and the process exits with status 1. Stdout stays reserved for clean JSON, so redirects and pipes never mix data with diagnostics."
+      },
+      {
+        "type": "paragraph",
+        "text": "The CLI is deliberately smaller than the SDK: operations like schema creation, extraction listing, batch jobs, corrections, and credit queries are SDK-only today. For anything beyond extract, schema lookup, and document lookup, write a short script against `@talonic/node` instead — the Quick Start covers the same flows in a few lines of TypeScript. `talonic --help` always prints the current, authoritative command list for the version you have installed."
+      },
+      {
+        "type": "callout",
+        "text": "Set `TALONIC_API_KEY` in your shell profile or `.env` file to avoid passing it on every invocation. The CLI does not support an `--api-key` flag, which prevents accidental key exposure in shell history."
+      }
     ],
     "related": [
-      { "label": "Extract", "slug": "sdk-extract" },
-      { "label": "Schemas", "slug": "sdk-schemas" }
+      {
+        "label": "Install",
+        "slug": "sdk-installation"
+      },
+      {
+        "label": "Extract",
+        "slug": "sdk-extract"
+      },
+      {
+        "label": "Quick Start",
+        "slug": "sdk-quickstart"
+      }
     ],
     "faq": [
-      { "question": "Does the Talonic SDK include a CLI?", "answer": "Yes. The @talonic/node package ships a talonic binary for command-line extraction, schema management, and document operations." }
+      {
+        "question": "Does the Talonic SDK include a CLI?",
+        "answer": "Yes. The talonic binary ships with @talonic/node and supports extraction (talonic extract), schema listing and lookup (talonic schemas list/get), and document listing and lookup (talonic documents list/get). Install via npm install @talonic/node and run it with npx talonic, or install globally."
+      },
+      {
+        "question": "How do I set the API key for the CLI?",
+        "answer": "Export TALONIC_API_KEY in your shell environment; the CLI reads it automatically and exits with an error if it is missing. There is no --api-key flag, which prevents accidental key exposure in shell history. TALONIC_BASE_URL optionally overrides the API base URL."
+      },
+      {
+        "question": "Can I pipe CLI output to other tools?",
+        "answer": "Yes. Successful output is pretty-printed JSON on stdout, so you can pipe it into jq or any JSON-aware tool. List commands wrap results in a data array (use .data[].id in jq), and errors go to stderr as plain text, so stdout always contains clean parseable JSON."
+      },
+      {
+        "question": "Does the CLI retry failed requests?",
+        "answer": "Yes. The CLI builds a standard SDK client under the hood, so 429s, 5xx responses, network errors, and timeouts are retried automatically with exponential backoff and jitter before an error is reported. There is no separate retry configuration for the CLI."
+      },
+      {
+        "question": "Can I manage jobs, extractions, or credits from the CLI?",
+        "answer": "Not yet. The CLI currently covers extract, schemas list/get, and documents list/get. Batch jobs, extraction queries, corrections, schema creation, and credit balance checks are available through the SDK — a few lines of TypeScript with @talonic/node cover each of those flows."
+      },
+      {
+        "question": "What format should the --schema flag use?",
+        "answer": "Pass a JSON string. Full JSON Schema with type \"object\" and a properties map is recommended, matching the SDK guidance — the flat key-type shorthand is not yet reliably normalised server-side. Quote the value in single quotes so your shell passes the JSON through unmodified."
+      }
     ],
-    "mentions": ["CLI", "command line", "talonic binary"]
+    "mentions": [
+      "CLI",
+      "terminal",
+      "talonic binary",
+      "jq"
+    ]
   },
   {
     "slug": "sdk-error-classes",
     "parentSlug": "sdk-errors",
     "title": "Error Classes",
-    "seoTitle": "SDK Error Classes — Talonic Docs",
-    "description": "Typed error hierarchy for the Talonic Node SDK: TalonicError base class with subclasses for auth, validation, rate limit, server, network, and timeout errors.",
+    "seoTitle": "Error Classes — Talonic Node SDK Typed Error Reference",
+    "description": "Every Talonic SDK failure is a typed TalonicError subclass carrying status, code, retryable, and requestId, mapped from HTTP statuses and transport faults.",
     "content": [
-      { "type": "paragraph", "text": "Every failure is a `TalonicError` subclass with `code`, `status`, `requestId`, and `message` properties:" },
-      { "type": "param-table", "title": "Error classes", "params": [
-        { "name": "TalonicAuthError", "type": "401, 403", "description": "Authentication or authorization failure." },
-        { "name": "TalonicNotFoundError", "type": "404", "description": "Resource not found." },
-        { "name": "TalonicValidationError", "type": "400, 409, 413, 422", "description": "Request validation failure." },
-        { "name": "TalonicRateLimitError", "type": "429", "description": "Rate limit exceeded (after retries exhausted). Includes `rateLimit.resetAt`." },
-        { "name": "TalonicServerError", "type": "5xx", "description": "Server error (after retries exhausted)." },
-        { "name": "TalonicNetworkError", "type": "—", "description": "DNS or TCP connection failure." },
-        { "name": "TalonicTimeoutError", "type": "—", "description": "Request exceeded configured timeout." }
-      ]},
-      { "type": "code", "language": "typescript", "title": "Error handling", "code": "import {\n  TalonicError,\n  TalonicRateLimitError,\n} from \"@talonic/node\"\n\ntry {\n  await talonic.extract({ ... })\n} catch (err) {\n  if (err instanceof TalonicRateLimitError) {\n    console.log(`Reset at ${err.rateLimit.resetAt}`)\n  } else if (err instanceof TalonicError) {\n    console.error(`${err.code} (status ${err.status}, request ${err.requestId}): ${err.message}`)\n  }\n}" }
+      {
+        "type": "paragraph",
+        "text": "Every failure is a `TalonicError` subclass with `status`, `code`, `retryable`, and `requestId` properties. The class hierarchy maps HTTP status codes to specific error types so you can handle each failure category independently."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Available error classes",
+        "code": "import {\n  TalonicError,           // base class — catches all SDK errors\n  TalonicAuthError,       // 401, 403 — invalid key or insufficient permissions\n  TalonicNotFoundError,   // 404 — resource does not exist\n  TalonicValidationError, // 400, 409, 413, 422 — bad input, conflict, file too large\n  TalonicRateLimitError,  // 429 — rate limited (after retries exhausted)\n  TalonicServerError,     // 500, 502, 503, 504 — server error (after retries exhausted)\n  TalonicNetworkError,    // DNS / TCP failures — status: 0, code: 'network_error'\n  TalonicTimeoutError,    // request exceeded configured timeout — status: 0, code: 'timeout'\n} from '@talonic/node'"
+      },
+      {
+        "type": "paragraph",
+        "text": "Each error class maps to a specific failure category. **TalonicAuthError** covers authentication and permission failures (401, 403). **TalonicValidationError** covers request rejections like bad input, conflicts, oversized files, or unprocessable entities (400, 409, 413, 422). **TalonicRateLimitError** and **TalonicServerError** are only thrown after all retries are exhausted."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Error class properties",
+        "code": "// Every TalonicError subclass carries these properties:\ntry {\n  await talonic.extract({ file_path: './doc.pdf', schema_id: 'sch_invalid' })\n} catch (err) {\n  if (err instanceof TalonicError) {\n    err.code       // 'invalid_schema' — machine-readable error code\n    err.status     // 422 — HTTP status (0 for network/timeout)\n    err.message    // 'Schema sch_invalid not found' — human-readable\n    err.retryable  // false — was this error retried?\n    err.requestId  // 'req_abc123' — server trace ID (undefined for transport errors)\n    err.name       // 'TalonicValidationError' — class name\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "**TalonicNetworkError** and **TalonicTimeoutError** represent transport-level failures that never reached the server. Both carry `status: 0` and are retried automatically. The `code` property is set to `\"network_error\"` or `\"timeout\"` respectively, and `retryable` is always `true`. `TalonicNetworkError` preserves the original error as `cause` for debugging DNS failures, TCP resets, and unreachable hosts. `TalonicTimeoutError` includes a `timeoutMs` property with the configured timeout value that was exceeded."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Transport-level error details",
+        "code": "import { TalonicNetworkError, TalonicTimeoutError, TalonicRateLimitError } from '@talonic/node'\n\ntry {\n  await talonic.extract({ file_path: './doc.pdf', schema_id: 'sch_abc123' })\n} catch (err) {\n  if (err instanceof TalonicTimeoutError) {\n    console.error(`Request timed out after ${err.timeoutMs}ms`)\n    // err.status === 0, err.code === 'timeout', err.retryable === true\n  }\n\n  if (err instanceof TalonicNetworkError) {\n    console.error(`Network failure: ${err.message}`)\n    console.error(`Original error: ${err.cause}`) // underlying DNS/TCP error\n    // err.status === 0, err.code === 'network_error', err.retryable === true\n  }\n\n  if (err instanceof TalonicRateLimitError) {\n    console.error(`Rate limited. Limit: ${err.rateLimit.limit}, remaining: ${err.rateLimit.remaining}`)\n    console.error(`Resets at: ${err.rateLimit.resetAt.toISOString()}`)\n    // err.rateLimit provides { limit, remaining, resetAt } from response headers\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "All error classes extend the base `TalonicError`, so a single `catch` with `instanceof TalonicError` captures every SDK failure. Use more specific subclasses when you need to branch on failure mode, such as showing a different message for auth errors versus validation errors. The `TalonicRateLimitError` is unique in carrying a `rateLimit` property with `limit`, `remaining`, and `resetAt` (Date) from the response headers, useful for scheduling manual retries after the SDK's own retries are exhausted."
+      },
+      {
+        "type": "paragraph",
+        "text": "The SDK also throws client-side `TalonicError` instances (not subclasses) for parameter validation failures before any network request is made. These carry `status: 0`, `retryable: false`, and codes like `missing_file_source`, `multiple_file_sources`, `multiple_schemas`, or `missing_field_reference`. They indicate programming errors in how the SDK is called rather than server-side failures."
+      },
+      {
+        "type": "callout",
+        "text": "Every error includes a `requestId` property (when available) that maps to the server-side request log. Include it in support tickets for fast debugging."
+      }
     ],
     "related": [
-      { "label": "Retries", "slug": "sdk-retries" },
-      { "label": "Error Codes", "slug": "error-codes" }
+      {
+        "label": "Retries & Backoff",
+        "slug": "sdk-retries"
+      },
+      {
+        "label": "Configuration",
+        "slug": "sdk-configuration"
+      }
     ],
     "faq": [
-      { "question": "What error types does the Talonic SDK throw?", "answer": "TalonicAuthError (401/403), TalonicNotFoundError (404), TalonicValidationError (400/409/413/422), TalonicRateLimitError (429), TalonicServerError (5xx), TalonicNetworkError, and TalonicTimeoutError." }
+      {
+        "question": "What error types does the Talonic SDK throw?",
+        "answer": "The SDK throws typed subclasses of TalonicError: TalonicAuthError (401/403), TalonicNotFoundError (404), TalonicValidationError (400/409/413/422), TalonicRateLimitError (429), TalonicServerError (5xx), TalonicNetworkError, and TalonicTimeoutError. Client-side validation errors use the base TalonicError class."
+      },
+      {
+        "question": "What is the requestId property on errors?",
+        "answer": "It is a server-assigned identifier for the request that failed. Include it in support tickets or logs for fast debugging. It may be undefined for transport-level errors (network, timeout) that never reached the server, and for client-side validation errors."
+      },
+      {
+        "question": "Are TalonicNetworkError and TalonicTimeoutError retried automatically?",
+        "answer": "Yes. Both are marked retryable: true and the SDK retries them up to maxRetries times with exponential backoff. They are only thrown after all retry attempts are exhausted."
+      },
+      {
+        "question": "What client-side validation errors does the SDK throw?",
+        "answer": "The SDK throws TalonicError (base class) with status 0 and retryable false for parameter validation failures: missing_file_source (no file provided to extract), multiple_file_sources (more than one file source), multiple_schemas (both schema and schema_id provided), and missing_field_reference (filter condition without field or fieldId)."
+      },
+      {
+        "question": "How does TalonicRateLimitError differ from other error classes?",
+        "answer": "TalonicRateLimitError uniquely carries a rateLimit property with limit (max requests per window), remaining (requests left), and resetAt (Date when the window resets). This data comes from the X-RateLimit-* response headers and is useful for scheduling manual retries or implementing backpressure in your application."
+      }
     ],
-    "mentions": ["TalonicError", "error handling", "typed errors"]
+    "mentions": [
+      "TalonicError",
+      "error handling",
+      "status codes"
+    ]
   },
   {
     "slug": "sdk-retries",
     "parentSlug": "sdk-errors",
     "title": "Retries",
-    "seoTitle": "SDK Retry Behavior — Talonic Docs",
-    "description": "Automatic retry behavior for the Talonic Node SDK: exponential backoff with jitter on transient errors and rate limits.",
+    "seoTitle": "Retries and Backoff — Talonic Node SDK Reliability Guide",
+    "description": "How the Talonic SDK retries 429s, 5xx responses, network errors, and timeouts with exponential backoff, jitter, and X-RateLimit-Reset-aware wait times.",
     "content": [
-      { "type": "paragraph", "text": "The SDK retries automatically on `429` (respecting `X-RateLimit-Reset`), `500`, `502`, `503`, `504`, network errors, and timeouts. Backoff is exponential with jitter, capped at 16 seconds." },
-      { "type": "paragraph", "text": "The API may set `retryable: false` on a specific error; the SDK respects that and does not retry." },
-      { "type": "paragraph", "text": "Configure the maximum number of retries via the `maxRetries` constructor option (default: `3`)." }
+      {
+        "type": "paragraph",
+        "text": "The SDK retries automatically on `429` (respecting `X-RateLimit-Reset`), `500`, `502`, `503`, `504`, network errors, and timeouts. Backoff is exponential with jitter, capped at 16s."
+      },
+      {
+        "type": "paragraph",
+        "text": "The API may set `retryable: false` on a specific error; the SDK respects that and does not retry."
+      },
+      {
+        "type": "paragraph",
+        "text": "The backoff schedule starts at 1 second for the first retry, doubling on each subsequent attempt (1s, 2s, 4s, ...) up to a maximum of 16 seconds. A random jitter of up to 250ms is added to each wait to prevent thundering-herd problems when multiple clients retry simultaneously. The formula is `min(1000 * 2^attempt, 16000) + random(0, 250)` milliseconds."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Retry behavior in practice",
+        "code": "import { Talonic, TalonicServerError, TalonicRateLimitError } from '@talonic/node'\n\n// Default: 3 retries with exponential backoff\n// Attempt 0: immediate request\n// Attempt 1: wait ~1.0-1.25s, then retry\n// Attempt 2: wait ~2.0-2.25s, then retry\n// Attempt 3: wait ~4.0-4.25s, then retry\n// If all fail, throws the last error\n\nconst talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  maxRetries: 3, // default\n})\n\ntry {\n  await talonic.extract({ file_path: './doc.pdf', schema_id: 'sch_abc123' })\n} catch (err) {\n  if (err instanceof TalonicServerError) {\n    // Thrown only after all 3 retries exhausted\n    console.error(`Server error after retries: ${err.code} (request ${err.requestId})`)\n  }\n  if (err instanceof TalonicRateLimitError) {\n    // Thrown after retries exhausted; check when the rate limit resets\n    console.error(`Rate limited. Resets at: ${err.rateLimit.resetAt}`)\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "For `429` rate-limit responses specifically, the SDK reads the `X-RateLimit-Reset` header and waits until the reset timestamp (plus a 100ms buffer) rather than using exponential backoff. If the reset window exceeds 60 seconds, the SDK falls back to standard backoff instead of blocking indefinitely. This means rate-limit retries are usually faster than exponential backoff because the SDK waits exactly the right amount of time rather than guessing."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Disable retries for development",
+        "code": "// In development, disable retries for immediate feedback\nconst talonic = new Talonic({\n  apiKey: process.env.TALONIC_API_KEY!,\n  maxRetries: 0, // no retries — throw on first failure\n})\n\n// Errors are thrown immediately without any wait\ntry {\n  await talonic.documents.list()\n} catch (err) {\n  // err.retryable tells you if this WOULD have been retried\n  if (err instanceof TalonicError && err.retryable) {\n    console.log('This error would be retried in production (maxRetries > 0)')\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "Non-retryable errors are never retried regardless of `maxRetries`. Authentication errors (401, 403), validation errors (400, 409, 413, 422), and not-found errors (404) are thrown immediately on the first attempt. The API can also mark specific errors as non-retryable by setting `retryable: false` in the error response body, which the SDK respects even for status codes that would normally be retried."
+      },
+      {
+        "type": "code",
+        "language": "typescript",
+        "title": "Custom retry logic on top of SDK retries",
+        "code": "import { Talonic, TalonicRateLimitError, TalonicError } from '@talonic/node'\n\n// For critical pipelines, add your own retry layer on top\nasync function extractWithFallback(talonic: Talonic, params: Parameters<Talonic['extract']>[0]) {\n  try {\n    return await talonic.extract(params)\n  } catch (err) {\n    if (err instanceof TalonicRateLimitError) {\n      // SDK retries are exhausted — wait for the rate limit reset and try once more\n      const waitMs = err.rateLimit.resetAt.getTime() - Date.now()\n      if (waitMs > 0 && waitMs < 120_000) {\n        console.log(`Rate limited. Waiting ${Math.ceil(waitMs / 1000)}s for reset...`)\n        await new Promise(r => setTimeout(r, waitMs + 100))\n        return await talonic.extract(params)\n      }\n    }\n    throw err\n  }\n}"
+      },
+      {
+        "type": "paragraph",
+        "text": "The transport layer handles `TalonicTimeoutError` and `TalonicNetworkError` as retryable by default. Timeout errors are raised when a request exceeds the configured `timeout` milliseconds (default 60s). Network errors cover DNS failures, TCP resets, and unreachable hosts. Both carry `status: 0` because no HTTP response was received. After all retries are exhausted, the last error is thrown with `retryable: true` still set, so your application code can decide whether to queue the request for later processing."
+      },
+      {
+        "type": "callout",
+        "text": "Rate limit retries respect the `X-RateLimit-Reset` header from the API, so the SDK waits the exact right amount of time before retrying a 429."
+      }
     ],
     "related": [
-      { "label": "Configuration", "slug": "sdk-configuration" },
-      { "label": "Error Classes", "slug": "sdk-error-classes" },
-      { "label": "Rate Limits", "slug": "rate-limits" }
+      {
+        "label": "Configuration",
+        "slug": "sdk-configuration"
+      },
+      {
+        "label": "Error Classes",
+        "slug": "sdk-error-classes"
+      }
     ],
     "faq": [
-      { "question": "Does the SDK retry failed requests?", "answer": "Yes. Automatic retries on 429, 500, 502, 503, 504, network errors, and timeouts with exponential backoff capped at 16s. Configure via maxRetries (default: 3)." }
+      {
+        "question": "Does the Talonic SDK retry failed requests?",
+        "answer": "Yes. It retries on 429, 500, 502, 503, 504, network errors, and timeouts with exponential backoff and jitter, up to maxRetries attempts (default 3). Non-retryable errors like 401, 403, 400, and 404 are thrown immediately."
+      },
+      {
+        "question": "What is the maximum backoff time between retries?",
+        "answer": "The exponential backoff caps at 16 seconds. For 429 rate-limit errors, the SDK instead waits until the server-provided reset timestamp (plus 100ms buffer), up to a maximum of 60 seconds. If the reset window exceeds 60 seconds, standard backoff is used instead."
+      },
+      {
+        "question": "Can the API override the SDK's retry behavior?",
+        "answer": "Yes. If the API returns retryable: false on an error response, the SDK will not retry that request regardless of the status code or maxRetries setting."
+      },
+      {
+        "question": "What is the exact backoff formula?",
+        "answer": "The wait time is min(1000 * 2^attempt, 16000) + random(0, 250) milliseconds. So: ~1s for the first retry, ~2s for the second, ~4s for the third, capping at ~16s. The random jitter of up to 250ms prevents thundering-herd problems when multiple clients retry simultaneously."
+      },
+      {
+        "question": "Are timeout and network errors retried?",
+        "answer": "Yes. Both TalonicTimeoutError and TalonicNetworkError are marked retryable: true and are retried up to maxRetries times. They carry status: 0 because no HTTP response was received. They are only thrown to your code after all retry attempts are exhausted."
+      }
     ],
-    "mentions": ["retries", "exponential backoff", "rate limit", "429"]
+    "mentions": [
+      "retry",
+      "backoff",
+      "rate limit",
+      "429"
+    ]
   }
 ]
